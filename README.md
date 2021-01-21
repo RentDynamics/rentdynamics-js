@@ -71,12 +71,41 @@ rdClient.get('/data').then((result: array | object) => {
  * `logout(): Promise<any>`
 
 ### Available Endpoints
- * /appointmentTimes/{communityGroupId}?appointmentDate=11/12/2018
- #### Example Response
- ```javascript
- ["10:00 AM","10:15 AM","10:30 AM","10:45 AM","11:00 AM","11:15 AM","11:30 AM","11:45 AM","12:00 PM","12:15 PM","12:30 PM","12:45 PM","01:00 PM","01:15 PM","01:30 PM","01:45 PM","02:00 PM","02:15 PM","02:30 PM","02:45 PM","03:00 PM","03:15 PM","03:30 PM","03:45 PM","04:00 PM","04:15 PM","04:30 PM","04:45 PM","05:00 PM","05:15 PM","05:30 PM"]
+ * appointmentTimes for a given community group
+ #### Examples
+There are 4 different ways to format the response.
+
+ 1. only the time, no date (this is the default when the 'dateFormat' argument is omitted)
+```javascript
+rdClient.get(`/appointmentTimes/${communityGroupId}?appointmentDate=10/31/2019&dateFormat=timeonly`).then(function(result) {
+  // result is a list of local appointmentTimes
+  // Example: ["10:00 AM","10:15 AM",...,"05:15 PM","05:30 PM"]
+});
 ```
 
+ 2. utc
+``` javascript
+rdClient.get(`/appointmentTimes/${communityGroupId}?appointmentDate=10/31/2019&dateFormat=utc`).then(function(result) {
+  // result is a list of appointmentTimes in utc
+  // Example: ["2020-01-05T17:00:00Z","2020-01-05T17:15:00Z",...,"2020-01-06T00:15:00Z","2020-01-06T05:30:00Z"]
+});
+```
+
+ 3. the local time of the property without an offset
+``` javascript
+rdClient.get(`/appointmentTimes/${communityGroupId}?appointmentDate=10/31/2019&dateFormat=localWithoutOffset`).then(function(result) {
+  // result is a list of appointment dates & times in local time without any offset information
+  // Example: ["2020-01-05T10:00:00","2020-01-05T10:15:00",...,"2020-01-05T17:15:00","2020-01-05T17:30:00"]
+});
+```
+
+ 4. the local time of the property with an offset
+``` javascript
+rdClient.get(`/appointmentTimes/${communityGroupId}?appointmentDate=10/31/2019&dateFormat=localWithOffset`).then(function(result) {
+  // result is a list of appointment dates & times in local time with the timezone offset of the property
+  // Example: ["2020-01-05T10:00:00-0700","2020-01-05T10:15:00-0700",...,"2020-01-05T17:15:00-0700","2020-01-05T17:30:00-0700"]
+});
+```
 
 ## Testing
  * `npm test` > Runs all the tests and checks the code coverage.
