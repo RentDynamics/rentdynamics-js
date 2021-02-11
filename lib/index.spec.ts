@@ -72,6 +72,32 @@ describe('get', () => {
     expect(spy.mock.calls[0][0]).toEqual(`https://api-dev.rentdynamics.com${endpoint}?include=${include}`);
   });
 
+  test('when get calls fetch and server returns empty response it shouldn\'t throw an error', (done) => {
+    // setup and configure chance
+    let chance = new Chance();
+    let mockFetchObject = {ok: true, clone: () => mockResponseObject, json: () => { return mockResponseObject  },  text: jest.fn(), catch: (cb: any) => { cb("some error") } };
+    let mockResponseObject = { then: (cb: any) => cb(mockFetchObject) };
+    // setup options for client
+    let options = new ClientOptions();
+    options.development = true;
+    options.apiKey = chance.string();
+    options.apiSecretKey = chance.string();
+
+    // arrange
+    let rdClient = new Client(options);
+    let endpoint = chance.string();
+    let spy = jest.spyOn(rdClient, '_fetch').mockResolvedValue(mockResponseObject);
+    let include = chance.string();
+    let parameters = {include: [include]};
+
+    // act
+    let response = rdClient.get(endpoint, parameters);
+
+    // assert
+    expect(mockFetchObject.text).toHaveBeenCalled();
+  });
+
+
 });
 
 
