@@ -335,7 +335,7 @@ describe('login', () => {
     let rdClient = new Client(options);
     let username = chance.string();
     let password = chance.string();
-    let spyPost = jest.spyOn(rdClient, 'post').mockResolvedValue({ token: expectedToken });
+    let spyPost = jest.spyOn(rdClient, 'post').mockReturnValue(Promise.resolve({ token: expectedToken }));
 
     // act
     let response = await rdClient.login(username, password);
@@ -385,7 +385,7 @@ describe('logout', () => {
 
     // arrange
     let rdClient = new Client(options);
-    let spyPost = jest.spyOn(rdClient, 'post').mockResolvedValue({ });
+    let spyPost = jest.spyOn(rdClient, 'post').mockReturnValue(Promise.resolve({ }));
 
     // act
     let response = await rdClient.logout();
