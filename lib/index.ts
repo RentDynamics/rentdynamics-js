@@ -26,7 +26,9 @@ export class Client {
         options.headers = this.helpers.getHeaders(endpoint + queryParams);
         let fullUrl = this.helpers.getBaseUrl() + endpoint + queryParams;
         return this._fetch(fullUrl.replace(/\|/g, '%7C'), options).then((result: Response) => {
-          return result.ok ? result.json() : result;
+          return result.ok ? result.clone().json().catch((err) =>
+              result.clone().text()
+          ) : result;
         });
     }
 
@@ -37,7 +39,9 @@ export class Client {
       options.body = JSON.stringify(payload);
       let fullUrl = this.helpers.getBaseUrl() + endpoint;
       return this._fetch(fullUrl, options).then((result: Response) => {
-        return result.ok ? result.json() : result;
+          return result.ok ? result.clone().json().catch((err) =>
+              result.clone().text()
+          ) : result;
       });
     }
 
@@ -48,7 +52,9 @@ export class Client {
       options.body = JSON.stringify(payload);
       let fullUrl = this.helpers.getBaseUrl() + endpoint;
       return this._fetch(fullUrl, options).then((result: Response) => {
-        return result.ok ? result.json() : result;
+          return result.ok ? result.clone().json().catch((err) =>
+              result.clone().text()
+          ) : result;
       });
     }
 
@@ -58,7 +64,9 @@ export class Client {
       options.headers = this.helpers.getHeaders(endpoint);
       let fullUrl = this.helpers.getBaseUrl() + endpoint;
       return this._fetch(fullUrl, options).then((result: Response) => {
-        return result.ok ? result.json() : result;
+          return result.ok ? result.clone().json().catch((err) =>
+              result.clone().text()
+          ) : result;
       });
     }
 

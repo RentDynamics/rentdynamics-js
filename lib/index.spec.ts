@@ -1,26 +1,103 @@
-import { Client, ClientOptions, ClientHelpers } from "./index";
+import { Client, ClientOptions, ClientHelpers} from "./index";
 import Chance from "chance";
 import jsSHA from "jssha";
 
+describe('all', () => {
+  // setup and configure chance
+  let chance = new Chance();
+  // setup options for client
+  let options = new ClientOptions();
+  options.development = true;
+  options.apiKey = chance.string();
+  options.apiSecretKey = chance.string();
+  let rdClient: Client | any = new Client(options);
+  let mockText = '';
+  let mockFetchResultObject = {
+    ok: true,
+    clone: () => {
+      return mockFetchResultObject;
+    },
+    json: () => {
+      return mockFetchResultObject;
+    },
+    text: jest.fn().mockReturnValue(Promise.resolve(mockText)),
+    catch: (cb: any) => {
+      return cb(mockText)
+    }
+  };
+  let mockFetchPromiseObject = {
+    then: (cb: any) => {
+      cb(mockFetchResultObject)
+    }
+  };
+
+  beforeEach(() => {
+
+  })
+
+  test.each([['get'], ['put'], ['post'], ['delete']])(
+      'when %s calls fetch and server returns empty success response it should return successful',
+      async (methodName) => {
+        // arrange
+        let endpoint = chance.string();
+        let spy = jest.spyOn(rdClient, '_fetch').mockResolvedValue(mockFetchPromiseObject);
+        let include = chance.string();
+        let parameters = {include: [include]};
+
+        // act
+        const result = await rdClient[methodName](endpoint, parameters);
+
+        // assert
+        expect.assertions(3);
+        expect(result).toEqual(mockText);
+        expect(spy).toHaveBeenCalledTimes(1);
+        expect(mockFetchResultObject.text).toHaveBeenCalledTimes(1);
+      });
+
+  test.each([['get'], ['put'], ['post'], ['delete']])(
+      'when %s calls fetch and server returns empty error response it should return not successful',
+      async (methodName) => {
+        // arrange
+        mockFetchResultObject.ok = false
+        let endpoint = chance.string();
+        let spy = jest.spyOn(rdClient, '_fetch').mockResolvedValue(mockFetchPromiseObject);
+        let include = chance.string();
+        let parameters = {include: [include]};
+
+        // act
+        const result = await rdClient[methodName](endpoint, parameters);
+
+        // assert
+        expect.assertions(3);
+        expect(result).toEqual(mockFetchResultObject);
+        expect(spy).toHaveBeenCalledTimes(1);
+        expect(mockFetchResultObject.text).toHaveBeenCalledTimes(0);
+      });
+
+})
 
 describe('get', () => {
 
   test('get calls fetch with method GET - fail', () => {
-       // setup and configure chance
-      let chance = new Chance();
+    // setup and configure chance
+    let chance = new Chance();
 
-      // setup options for client
-      let options = new ClientOptions();
-      options.apiKey = chance.string();
-      options.apiSecretKey = chance.string();
+    // setup options for client
+    let options = new ClientOptions();
+    options.apiKey = chance.string();
+    options.apiSecretKey = chance.string();
 
-      // arrange
-      let rdClient = new Client(options);
-      let endpoint = chance.string();
-      let spy = jest.spyOn(rdClient, '_fetch').mockResolvedValue({ok: false, json: () => { return {}; }});
+    // arrange
+    let rdClient = new Client(options);
+    let endpoint = chance.string();
+    let spy = jest.spyOn(rdClient, '_fetch').mockResolvedValue({
+      ok: false, json: () => {
+        return {};
+      }
+    });
 
-      // act
-      let response = rdClient.get(endpoint);
+    // act
+    let response = rdClient.get(endpoint);
 
       // assert
       expect(spy.mock.calls.length).toBe(1);
@@ -244,6 +321,30 @@ describe('login', () => {
       expect(spy.mock.calls.length).toBe(1);
   });
 
+  test('when login calls post authToken should be set to returned token', async () => {
+    // setup and configure chance
+    let chance = new Chance();
+    let expectedToken = chance.apple_token();
+
+    // setup options for client
+    let options = new ClientOptions();
+    options.apiKey = chance.string();
+    options.apiSecretKey = chance.string();
+
+    // arrange
+    let rdClient = new Client(options);
+    let username = chance.string();
+    let password = chance.string();
+    let spyPost = jest.spyOn(rdClient, 'post').mockReturnValue(Promise.resolve({ token: expectedToken }));
+
+    // act
+    let response = await rdClient.login(username, password);
+
+    // assert
+    expect(spyPost).toHaveBeenCalledTimes(1);
+    expect(options.authToken).toEqual(expectedToken);
+  });
+
 });
 
 
@@ -269,6 +370,29 @@ describe('logout', () => {
     // assert
     expect(spy).toHaveBeenCalled();
     expect(spy.mock.calls.length).toBe(1);
+  });
+
+  test('when logout calls post authToken should be set to undefined', async () => {
+    // setup and configure chance
+    let chance = new Chance();
+    let expectedToken = undefined;
+
+    // setup options for client
+    let options = new ClientOptions();
+    options.apiKey = chance.string();
+    options.apiSecretKey = chance.string();
+    options.authToken = chance.apple_token();
+
+    // arrange
+    let rdClient = new Client(options);
+    let spyPost = jest.spyOn(rdClient, 'post').mockReturnValue(Promise.resolve({ }));
+
+    // act
+    let response = await rdClient.logout();
+
+    // assert
+    expect(spyPost).toHaveBeenCalledTimes(1);
+    expect(options.authToken).toEqual(expectedToken);
   });
 
 });

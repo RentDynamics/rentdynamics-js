@@ -1,5 +1,8 @@
 # Rent Dynamics JS Helpers Change Log
 
+## v0.6.1
+### Fixes
+ * Fixed null response bug causing it to error out when parsing json
 
 ## v0.5.2
 ### Fixes
