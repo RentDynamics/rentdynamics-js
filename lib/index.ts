@@ -28,7 +28,7 @@ export class Client {
         return this._fetch(fullUrl.replace(/\|/g, '%7C'), options).then((result: Response) => {
           return result.ok ? result.clone().json().catch((err) =>
               result.clone().text()
-          ) : result.clone();
+          ) : result;
         });
     }
 
@@ -41,7 +41,7 @@ export class Client {
       return this._fetch(fullUrl, options).then((result: Response) => {
           return result.ok ? result.clone().json().catch((err) =>
               result.clone().text()
-          ) : result.clone();
+          ) : result;
       });
     }
 
@@ -54,7 +54,7 @@ export class Client {
       return this._fetch(fullUrl, options).then((result: Response) => {
           return result.ok ? result.clone().json().catch((err) =>
               result.clone().text()
-          ) : result.clone();
+          ) : result;
       });
     }
 
@@ -66,7 +66,7 @@ export class Client {
       return this._fetch(fullUrl, options).then((result: Response) => {
           return result.ok ? result.clone().json().catch((err) =>
               result.clone().text()
-          ) : result.clone();
+          ) : result;
       });
     }
 
