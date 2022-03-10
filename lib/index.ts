@@ -76,6 +76,7 @@ export class Client {
       password = shaObj.getHash('HEX');
       let endpoint = '/auth/login';
       return this.post(endpoint, { username: username, password: password }).then((result) => {
+        this.options.userId = result.userId;
         this.options.authToken = result.token;
         return result;
       });
@@ -83,8 +84,9 @@ export class Client {
 
     public logout(): Promise<any> {
       let endpoint = '/auth/logout';
-      return this.post(endpoint, {authToken: this.options.authToken}).then((res) => {
+      return this.post(endpoint, { user: this.options?.userId }).then((res) => {
         this.options.authToken = undefined;
+        this.options.userId = undefined;
         return res;
       });
     }
@@ -99,6 +101,7 @@ export class ClientOptions {
     public service?: string = undefined;
     public developmentUrl?: string = undefined;
     public baseUrl?: string = undefined;
+    public userId?: number = undefined;
 }
 
 export class ClientHelpers {
