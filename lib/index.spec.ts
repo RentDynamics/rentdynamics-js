@@ -146,7 +146,7 @@ describe('get', () => {
 
     // assert
     expect(spy.mock.calls.length).toBe(1);
-    expect(spy.mock.calls[0][0]).toEqual(`https://api-dev.rentdynamics.com${endpoint}?include=${include}`);
+    expect(spy.mock.calls[0][0]).toEqual(`https://api.rentdynamics.dev${endpoint}?include=${include}`);
   });
 
 });
@@ -735,7 +735,7 @@ describe('getBaseUrl', () => {
     let result = clientHelpers.getBaseUrl();
 
     // assert
-    expect(result).toEqual('https://api-dev.rentdynamics.com');
+    expect(result).toEqual('https://api.rentdynamics.dev');
   });
 
   test('should return custom url in development with developmentUrl', () => {
