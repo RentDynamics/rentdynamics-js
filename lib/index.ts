@@ -139,7 +139,7 @@ export class ClientHelpers {
         if (this.options.development && this.options.developmentUrl) {
             return this.options.developmentUrl;
         } else if (this.options.development) {
-            return 'https://api-dev.rentdynamics.com';
+            return 'https://api.rentdynamics.dev';
         }
         if (this.options.baseUrl) {
             return  this.options.baseUrl;
