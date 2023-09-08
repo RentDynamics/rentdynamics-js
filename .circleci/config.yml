@@ -6,7 +6,7 @@ version: 2
 jobs:
   build:
     docker:
-      - image: circleci/node:6.13.0
+      - image: cimg/node:10.24.1
 
     working_directory: ~/rentdynamics-js
 
