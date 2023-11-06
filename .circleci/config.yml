@@ -1,36 +1,108 @@
-# Javascript Node CircleCI 2.0 configuration file
-#
-# Check https://circleci.com/docs/2.0/language-javascript/ for more details
-#
-version: 2
-jobs:
-  build:
-    docker:
-      - image: circleci/node:6.13.0
+version: 2.1
 
+orbs:
+  aws-cli: circleci/aws-cli@2.0
+
+executors:
+  node:
+    docker:
+      - image: cimg/node:10.24.1
     working_directory: ~/rentdynamics-js
 
+jobs:
+  prepare:
+    executor: node
     steps:
-      - checkout
-
-      # Download and cache dependencies
+      - checkout:
+          path: ~/rentdynamics-js
       - restore_cache:
-          keys:
-          - v1-dependencies-{{ checksum "package.json" }}
-          # fallback to using the latest cache if no exact match is found
-          - v1-dependencies-
-
-      - run: npm install
-
+          key: v1-dependencies-{{ checksum "./package.json" }}
+      - run:
+          name: Install node modules
+          command: npm install
       - save_cache:
+          key: v1-dependencies-{{ checksum "./package.json" }}
           paths:
-            - node_modules
-          key: v1-dependencies-{{ checksum "package.json" }}
+            - ./node_modules
+      - run:
+          name: Build
+          command: npm run build
+      - persist_to_workspace:
+          root: ~/
+          paths: [rentdynamics-js]
 
-      - run: npm test
+  test:
+    executor: node
+    steps:
+      - attach_workspace:
+          at: ~/
+      - run:
+          name: Run tests
+          command: npm test
 
-      - store_artifacts:
-          path: ./coverage
+  publish-npm:
+    executor: node
+    steps:
+      - attach_workspace:
+          at: ~/
+      - run:
+          name: Publish package to npm
+          command: |
+            npm set //registry.npmjs.org/:_authToken=$NPM_TOKEN
+            npm publish
 
-      # upload coverage file to codecov
-      - run: ./node_modules/.bin/codecov
+  publish-cdn-dev:
+    executor: node
+    steps:
+      - attach_workspace:
+          at: ~/
+      - aws-cli/setup
+      - run:
+          name: Publish package to dev cdn
+          command: |
+            aws s3 cp ./dist/rentdynamics.$(jq .version package.json -r).js s3://$CDNJS_DEV_BUCKET_NAME
+            aws s3 cp ./dist/rentdynamics.latest.js s3://$CDNJS_DEV_BUCKET_NAME
+            aws cloudfront create-invalidation --distribution-id $CDNJS_DEV_DISTRIBUTION_ID --paths '/*'
+
+  publish-cdn-prod:
+    executor: node
+    steps:
+      - attach_workspace:
+          at: ~/
+      - aws-cli/setup
+      - run:
+          name: Publish package to cdn
+          command: |
+            aws s3 cp ./dist/rentdynamics.$(jq .version package.json -r).js s3://$CDNJS_BUCKET_NAME
+            aws s3 cp ./dist/rentdynamics.latest.js s3://$CDNJS_BUCKET_NAME
+            aws cloudfront create-invalidation --distribution-id $CDNJS_DISTRIBUTION_ID --paths '/*'
+
+workflows:
+  test-and-release:
+    jobs:
+      - prepare
+
+      - test:
+          requires: [prepare]
+
+      - publish-npm:
+          requires: [prepare, test]
+          filters:
+            branches:
+              only:
+                - master
+
+      - publish-cdn-dev:
+          requires: [prepare, test]
+          filters:
+            branches:
+              only:
+                - master
+                - /^.*__dev$/
+
+      - publish-cdn-prod:
+          requires: [prepare, test, publish-cdn-dev, publish-npm]
+          filters:
+            branches:
+              only:
+                - master
