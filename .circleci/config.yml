@@ -86,14 +86,14 @@ workflows:
           requires: [prepare]
 
       - publish-npm:
-          requires: [prepare, test]
+          requires: [test]
           filters:
             branches:
               only:
                 - master
 
       - publish-cdn-dev:
-          requires: [prepare, test]
+          requires: [test]
           filters:
             branches:
               only:
@@ -101,7 +101,7 @@ workflows:
                 - /^.*__dev$/
 
       - publish-cdn-prod:
-          requires: [prepare, test, publish-cdn-dev, publish-npm]
+          requires: [publish-npm, publish-cdn-dev]
           filters:
             branches:
               only:
