@@ -15,35 +15,12 @@ jobs:
     steps:
       - checkout:
           path: ~/rentdynamics-js
-      - restore_cache:
-          key: v1-dependencies-{{ checksum "./package.json" }}
-      - run:
-          name: Install node modules
-          command: npm install
-      - save_cache:
-          key: v1-dependencies-{{ checksum "./package.json" }}
-          paths:
-            - ./node_modules
-      - run:
-          name: Build
-          command: npm run build
-      - persist_to_workspace:
-          root: ~/
-          paths: [rentdynamics-js]
-
-  test:
-    executor: node
-    steps:
-      - attach_workspace:
-          at: ~/
-
       - run:
           name: Install NVM
           command: |
             curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.3/install.sh | bash
             echo 'export NVM_DIR=$HOME/.nvm' >> $BASH_ENV
             echo 'source $NVM_DIR/nvm.sh' >> $BASH_ENV
-
       - run: 
           name: Install Node.js versions
           command: |
@@ -53,26 +30,36 @@ jobs:
             nvm install 16
             nvm install 18
             nvm alias default 10
+      - persist_to_workspace:
+          root: ~/
+          paths: [rentdynamics-js, .nvm]
 
+  test_version:
+    executor: node
+    parameters:
+      node_version:
+        type: string
+    steps:
+      - attach_workspace:
+          at: ~/
+      - restore_cache:
+          key: v1-dependencies-<< parameters.node_version >>-{{ checksum "./package.json" }}
       - run:
-          name: Test on Node.js 10
-          command: nvm use 10 && npm test
-
+          name: Install node modules
+          command: npm install
+      - save_cache:
+          key: v1-dependencies-<< parameters.node_version >>-{{ checksum "./package.json" }}
+          paths:
+            - ./node_modules
       - run:
-          name: Test on Node.js 12
-          command: nvm use 12 && npm test
-
+          name: Use Node.js << parameters.node_version >>
+          command: nvm use << parameters.node_version >>
       - run:
-          name: Test on Node.js 14
-          command: nvm use 14 && npm test
-
+          name: Build Project 
+          command: npm build
       - run:
-          name: Test on Node.js 16
-          command: nvm use 16 && npm test
-
-      - run:
-          name: Test on Node.js 18
-          command: nvm use 18 && npm test 
+          name: Run tests (Node.js << parameters.node_version >>)
+          command: npm test
 
   publish-npm:
     executor: node
@@ -116,18 +103,36 @@ workflows:
     jobs:
       - prepare
 
-      - test:
+      - test_version:
           requires: [prepare]
+          name: test-node-10
+          node_version: "10"
+      - test_version:
+          requires: [prepare]
+          name: test-node-12
+          node_version: "12"
+      - test_version:
+          requires: [prepare]
+          name: test-node-14
+          node_version: "14"
+      - test_version:
+          requires: [prepare]
+          name: test-node-16
+          node_version: "16"
+      - test_version:
+          requires: [prepare]
+          name: test-node-18
+          node_version: "18"
 
       - publish-npm:
-          requires: [test]
+          requires: [test-node-10, test-node-12, test-node-14, test-node-16, test-node-18]
           filters:
             branches:
               only:
                 - master
 
       - publish-cdn-dev:
-          requires: [test]
+          requires: [test-node-10, test-node-12, test-node-14, test-node-16, test-node-18]
           filters:
             branches:
               only:
