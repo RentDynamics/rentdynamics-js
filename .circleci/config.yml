@@ -27,6 +27,46 @@ executors:
       - image: cimg/node:<< parameters.node_version >>-browsers
     working_directory: ~/rentdynamics-js
 
+commands:
+  install_dependencies:
+    parameters:
+      node_version:
+        type: string
+    steps:
+      - restore_cache:
+          key: v1-dependencies-<< parameters.node_version >>-{{ checksum "./package.json" }}
+      - run:
+          name: Install node modules
+          command: npm install
+      - save_cache:
+          key: v1-dependencies-<< parameters.node_version >>-{{ checksum "./package.json" }}
+          paths:
+            - ./node_modules
+
+  build_project:
+    parameters:
+      node_version:
+        type: string
+    steps:
+      - run:
+          name: Build
+          command: npm run build
+      - persist_to_workspace:
+          root: ~/rentdynamics-js-<< parameters.node_version >>
+          paths:
+            - .
+
+  test_project:
+    parameters:
+      node_version:
+        type: string
+    steps:
+      - attach_workspace:
+          at: ~/rentdynamics-js-<< parameters.node_version >>
+      - run:
+          name: Run tests
+          command: npm test
+
 jobs:
   prepare:
     executor: node
@@ -38,22 +78,10 @@ jobs:
     steps:
       - checkout:
           path: ~/rentdynamics-js
-      - restore_cache:
-          key: v1-dependencies-<< parameters.node_version >>-{{ checksum "./package.json" }}
-      - run:
-          name: Install node modules
-          command: npm install
-      - save_cache:
-          key: v1-dependencies-<< parameters.node_version >>-{{ checksum "./package.json" }}
-          paths:
-            - ./node_modules
-      - run:
-          name: Build
-          command: npm run build
-      - persist_to_workspace:
-          root: ~/rentdynamics-js-<< parameters.node_version >>
-          paths:
-            - .
+      - install_dependencies:
+          node_version: << parameters.node_version >>
+      - build_project:
+          node_version: << parameters.node_version >>
 
   test:
     executor: node
@@ -63,11 +91,9 @@ jobs:
         default: "18.16.1"
         enum: *node_versions
     steps:
-      - attach_workspace:
-          at: ~/
-      - run:
-          name: Run tests
-          command: npm test
+      - test_project:
+          node_version: << parameters.node_version >>
+
 
   publish-npm:
     executor: node
