@@ -21,15 +21,6 @@ jobs:
             curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.3/install.sh | bash
             echo 'export NVM_DIR=$HOME/.nvm' >> $BASH_ENV
             echo 'source $NVM_DIR/nvm.sh' >> $BASH_ENV
-      - run: 
-          name: Install Node.js versions
-          command: |
-            nvm install 10
-            nvm install 12
-            nvm install 14
-            nvm install 16
-            nvm install 18
-            nvm alias default 10
       - persist_to_workspace:
           root: ~/
           paths: [rentdynamics-js, .nvm]
@@ -42,27 +33,29 @@ jobs:
     steps:
       - attach_workspace:
           at: ~/
-      - run:
-          name: Use Node.js << parameters.node_version >>
+      - run: 
+          name: Install Node.js versions
           command: |
             export NVM_DIR="$HOME/.nvm"
             [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh" 
+            nvm install << parameters.node_version >>
+            nvm alias default << parameters.node_version >>
             nvm use << parameters.node_version >>
       - restore_cache:
           key: v1-dependencies-<< parameters.node_version >>-{{ checksum "./package.json" }}
       - run:
           name: Install node modules
-          command: $NVM_DIR/versions/node/v<< parameters.node_version >>/bin/npm install
+          command: npm install
       - save_cache:
           key: v1-dependencies-<< parameters.node_version >>-{{ checksum "./package.json" }}
           paths:
             - ./node_modules
       - run:
           name: Build Project 
-          command: $NVM_DIR/versions/node/v<< parameters.node_version >>/bin/npm run build
+          command: npm run build
       - run:
           name: Run tests (Node.js << parameters.node_version >>)
-          command: $NVM_DIR/versions/node/v<< parameters.node_version >>/bin/npm test
+          command: npm test
 
   publish-npm:
     executor: node
