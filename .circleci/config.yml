@@ -6,7 +6,9 @@ orbs:
 executors:
   node:
     docker:
-      - image: cimg/node:10.24.1
+      - image: cimg/node:14-browsers-legacy
+        environment:
+          NVM_DIR: /opt/circleci/.nvm
     working_directory: ~/rentdynamics-js
 
 jobs:
@@ -36,9 +38,36 @@ jobs:
     steps:
       - attach_workspace:
           at: ~/
+
+      - run: 
+          name: Install Node.js versions
+          command: |
+            nvm install 10
+            nvm install 12
+            nvm install 14
+            nvm install 16
+            nvm install 18
+            nvm alias default 10
+
       - run:
-          name: Run tests
-          command: npm test
+          name: Test on Node.js 10
+          command: nvm use 10 && npm test
+
+      - run:
+          name: Test on Node.js 12
+          command: nvm use 12 && npm test
+
+      - run:
+          name: Test on Node.js 14
+          command: nvm use 14 && npm test
+
+      - run:
+          name: Test on Node.js 16
+          command: nvm use 16 && npm test
+
+      - run:
+          name: Test on Node.js 18
+          command: nvm use 18 && npm test 
 
   publish-npm:
     executor: node
