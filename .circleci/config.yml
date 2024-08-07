@@ -6,16 +6,16 @@ orbs:
 parameters:
   node_version:
     type: enum
-    default: "18"
-    enum: ["14", "16", "18", "20"]
+    default: "18.16.1"
+    enum: ["14.21.3", "16.20.2", "18.16.1", "20.5.1"]
 
 executors:
   node:
     parameters:
       node_version:
         type: enum
-        default: "18"
-        enum: ["14", "16", "18", "20"]
+        default: "18.16.1"
+        enum: ["14.21.3", "16.20.2", "18.16.1", "20.5.1"]
     docker:
       - image: cimg/node:<< parameters.node_version >>-browsers
     working_directory: ~/rentdynamics-js
@@ -26,8 +26,8 @@ jobs:
     parameters:
       node_version:
         type: enum
-        default: "18"
-        enum: ["14", "16", "18", "20"]
+        default: "18.16.1"
+        enum: ["14.21.3", "16.20.2", "18.16.1", "20.5.1"]
     steps:
       - checkout:
           path: ~/rentdynamics-js
@@ -52,8 +52,8 @@ jobs:
     parameters:
       node_version:
         type: enum
-        default: "18"
-        enum: ["14", "16", "18", "20"]
+        default: "18.16.1"
+        enum: ["14.21.3", "16.20.2", "18.16.1", "20.5.1"]
     steps:
       - attach_workspace:
           at: ~/
@@ -104,13 +104,13 @@ workflows:
       - prepare:
         matrix:
           parameters:
-            node_version: ["14", "16", "18", "20"]
+            node_version: ["14.21.3", "16.20.2", "18.16.1", "20.5.1"]
 
       - test:
           requires: [prepare]
           matrix:
             parameters:
-              node_version: ["14", "16", "18", "20"]  # Your Node.js versions
+              node_version: ["14.21.3", "16.20.2", "18.16.1", "20.5.1"]
 
       - publish-npm:
           requires: [test]
