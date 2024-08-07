@@ -17,7 +17,7 @@ executors:
         default: "18"
         enum: ["14", "16", "18", "20"]
     docker:
-      - image: cimg/node:<< parameters.node_version >>
+      - image: cimg/node:<< parameters.node_version >>-browsers
     working_directory: ~/rentdynamics-js
 
 jobs:
