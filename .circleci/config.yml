@@ -11,6 +11,11 @@ parameters:
 
 executors:
   node:
+    parameters:
+      node_version:
+        type: enum
+        default: "18"
+        enum: ["14", "16", "18", "20"]
     docker:
       - image: cimg/node:<< parameters.node_version >>
     working_directory: ~/rentdynamics-js
@@ -18,10 +23,11 @@ executors:
 jobs:
   prepare:
     executor: node
-    matrix:
-      parameters:
-        node_version: ["14", "16", "18", "20"]
-
+    parameters:
+      node_version:
+        type: enum
+        default: "18"
+        enum: ["14", "16", "18", "20"]
     steps:
       - checkout:
           path: ~/rentdynamics-js
@@ -43,9 +49,11 @@ jobs:
 
   test:
     executor: node
-    matrix:
-      parameters:
-        node_version: ["14", "16", "18", "20"]
+    parameters:
+      node_version:
+        type: enum
+        default: "18"
+        enum: ["14", "16", "18", "20"]
     steps:
       - attach_workspace:
           at: ~/
@@ -94,9 +102,15 @@ workflows:
   test-and-release:
     jobs:
       - prepare:
+        matrix:
+          parameters:
+            node_version: ["14", "16", "18", "20"]
 
       - test:
           requires: [prepare]
+          matrix:
+            parameters:
+              node_version: ["14", "16", "18", "20"]  # Your Node.js versions
 
       - publish-npm:
           requires: [test]
