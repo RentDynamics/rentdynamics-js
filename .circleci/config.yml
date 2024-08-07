@@ -3,11 +3,18 @@ version: 2.1
 orbs:
   aws-cli: circleci/aws-cli@2.0
 
+aliases:
+  - &node_versions
+    - "14.21.3"
+    - "16.20.2"
+    - "18.16.1"
+    - "20.5.1"
+
 parameters:
   node_version:
     type: enum
     default: "18.16.1"
-    enum: ["14.21.3", "16.20.2", "18.16.1", "20.5.1"]
+    enum: *node_versions
 
 executors:
   node:
@@ -15,7 +22,7 @@ executors:
       node_version:
         type: enum
         default: "18.16.1"
-        enum: ["14.21.3", "16.20.2", "18.16.1", "20.5.1"]
+        enum: *node_versions
     docker:
       - image: cimg/node:<< parameters.node_version >>-browsers
     working_directory: ~/rentdynamics-js
@@ -27,25 +34,26 @@ jobs:
       node_version:
         type: enum
         default: "18.16.1"
-        enum: ["14.21.3", "16.20.2", "18.16.1", "20.5.1"]
+        enum: *node_versions
     steps:
       - checkout:
           path: ~/rentdynamics-js
       - restore_cache:
-          key: v1-dependencies-{{ checksum "./package.json" }}
+          key: v1-dependencies-<< parameters.node_version >>-{{ checksum "./package.json" }}
       - run:
           name: Install node modules
           command: npm install
       - save_cache:
-          key: v1-dependencies-{{ checksum "./package.json" }}
+          key: v1-dependencies-<< parameters.node_version >>-{{ checksum "./package.json" }}
           paths:
             - ./node_modules
       - run:
           name: Build
           command: npm run build
       - persist_to_workspace:
-          root: ~/
-          paths: [rentdynamics-js]
+          root: ~/rentdynamics-js-<< parameters.node_version >>
+          paths:
+            - .
 
   test:
     executor: node
@@ -53,7 +61,7 @@ jobs:
       node_version:
         type: enum
         default: "18.16.1"
-        enum: ["14.21.3", "16.20.2", "18.16.1", "20.5.1"]
+        enum: *node_versions
     steps:
       - attach_workspace:
           at: ~/
@@ -104,7 +112,7 @@ workflows:
       - prepare:
           matrix:
             parameters:
-              node_version: ["14.21.3", "16.20.2", "18.16.1", "20.5.1"]
+              node_version: *node_versions
 
       - test:
           requires:
@@ -114,7 +122,7 @@ workflows:
             - prepare-20.5.1
           matrix:
             parameters:
-              node_version: ["14.21.3", "16.20.2", "18.16.1", "20.5.1"]
+              node_version: *node_versions
 
       - publish-npm:
           requires: [test]
