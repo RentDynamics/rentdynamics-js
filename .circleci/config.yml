@@ -54,7 +54,8 @@ jobs:
       - run:
           name: Use Node.js << parameters.node_version >>
           command: |
-            source $NVM_DIR/nvm.sh
+            export NVM_DIR="$HOME/.nvm"
+            [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh" 
             nvm use << parameters.node_version >>
       - run:
           name: Build Project 
