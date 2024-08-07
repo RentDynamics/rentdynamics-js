@@ -50,7 +50,7 @@ commands:
     steps:
       - run:
           name: Build
-          command: npm run build
+          command: npm run build --openssl-legacy-provider
       - persist_to_workspace:
           root: ~/rentdynamics-js-<< parameters.node_version >>
           paths:
