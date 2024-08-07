@@ -48,22 +48,21 @@ jobs:
             export NVM_DIR="$HOME/.nvm"
             [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh" 
             nvm use << parameters.node_version >>
-            export PATH="$NVM_DIR/versions/node/v<< parameters.node_version >>/bin:$PATH"
       - restore_cache:
           key: v1-dependencies-<< parameters.node_version >>-{{ checksum "./package.json" }}
       - run:
           name: Install node modules
-          command: npm install
+          command: $NVM_DIR/versions/node/v<< parameters.node_version >>/bin/npm install
       - save_cache:
           key: v1-dependencies-<< parameters.node_version >>-{{ checksum "./package.json" }}
           paths:
             - ./node_modules
       - run:
           name: Build Project 
-          command: npm run build
+          command: $NVM_DIR/versions/node/v<< parameters.node_version >>/bin/npm run build
       - run:
           name: Run tests (Node.js << parameters.node_version >>)
-          command: npm test
+          command: $NVM_DIR/versions/node/v<< parameters.node_version >>/bin/npm test
 
   publish-npm:
     executor: node
