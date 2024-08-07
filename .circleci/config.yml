@@ -102,12 +102,16 @@ workflows:
   test-and-release:
     jobs:
       - prepare:
-        matrix:
-          parameters:
-            node_version: ["14.21.3", "16.20.2", "18.16.1", "20.5.1"]
+          matrix:
+            parameters:
+              node_version: ["14.21.3", "16.20.2", "18.16.1", "20.5.1"]
 
       - test:
-          requires: [prepare]
+          requires:
+            - prepare-14.21.3
+            - prepare-16.20.2
+            - prepare-18.16.1
+            - prepare-20.5.1
           matrix:
             parameters:
               node_version: ["14.21.3", "16.20.2", "18.16.1", "20.5.1"]
