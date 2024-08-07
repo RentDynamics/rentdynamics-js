@@ -42,6 +42,12 @@ jobs:
     steps:
       - attach_workspace:
           at: ~/
+      - run:
+          name: Use Node.js << parameters.node_version >>
+          command: |
+            export NVM_DIR="$HOME/.nvm"
+            [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh" 
+            nvm use << parameters.node_version >>
       - restore_cache:
           key: v1-dependencies-<< parameters.node_version >>-{{ checksum "./package.json" }}
       - run:
@@ -52,14 +58,8 @@ jobs:
           paths:
             - ./node_modules
       - run:
-          name: Use Node.js << parameters.node_version >>
-          command: |
-            export NVM_DIR="$HOME/.nvm"
-            [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh" 
-            nvm use << parameters.node_version >>
-      - run:
           name: Build Project 
-          command: npm build
+          command: npm run build
       - run:
           name: Run tests (Node.js << parameters.node_version >>)
           command: npm test
