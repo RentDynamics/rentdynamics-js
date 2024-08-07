@@ -18,6 +18,10 @@ executors:
 jobs:
   prepare:
     executor: node
+    matrix:
+      parameters:
+        node_version: ["14", "16", "18", "20"]
+
     steps:
       - checkout:
           path: ~/rentdynamics-js
@@ -39,6 +43,9 @@ jobs:
 
   test:
     executor: node
+    matrix:
+      parameters:
+        node_version: ["14", "16", "18", "20"]
     steps:
       - attach_workspace:
           at: ~/
@@ -87,15 +94,9 @@ workflows:
   test-and-release:
     jobs:
       - prepare:
-          matrix:
-            parameters:
-              node_version: ["14", "16", "18", "20"]
 
       - test:
           requires: [prepare]
-          matrix:
-            parameters:
-              node_version: ["14", "16", "18", "20"]
 
       - publish-npm:
           requires: [test]
