@@ -48,6 +48,7 @@ jobs:
             export NVM_DIR="$HOME/.nvm"
             [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh" 
             nvm use << parameters.node_version >>
+            export PATH="$NVM_DIR/versions/node/v<< parameters.node_version >>/bin:$PATH"
       - restore_cache:
           key: v1-dependencies-<< parameters.node_version >>-{{ checksum "./package.json" }}
       - run:
