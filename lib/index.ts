@@ -113,6 +113,8 @@ export class ClientHelpers {
 
         if (typeof payload === undefined || payload === null) {
             formattedPayload = null;
+        } else if (typeof (payload) === 'string') {
+            formattedPayload = payload.replace(/ /g, '');
         } else if (payload !== Object(payload)) {
             formattedPayload = payload;
         } else if (Array.isArray(payload)) {
