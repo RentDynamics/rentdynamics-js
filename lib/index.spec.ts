@@ -1,6 +1,6 @@
-import { Client, ClientOptions, ClientHelpers} from "./index";
-import Chance from "chance";
-import jsSHA from "jssha";
+import { Client, ClientOptions, ClientHelpers } from './index';
+import Chance from 'chance';
+import jsSHA from 'jssha';
 
 describe('all', () => {
   // setup and configure chance
@@ -22,62 +22,60 @@ describe('all', () => {
     },
     text: jest.fn().mockReturnValue(Promise.resolve(mockText)),
     catch: (cb: any) => {
-      return cb(mockText)
+      return cb(mockText);
     }
   };
   let mockFetchPromiseObject = {
     then: (cb: any) => {
-      cb(mockFetchResultObject)
+      cb(mockFetchResultObject);
     }
   };
 
-  beforeEach(() => {
-
-  })
+  beforeEach(() => {});
 
   test.each([['get'], ['put'], ['post'], ['delete']])(
-      'when %s calls fetch and server returns empty success response it should return successful',
-      async (methodName) => {
-        // arrange
-        let endpoint = chance.string();
-        let spy = jest.spyOn(rdClient, '_fetch').mockResolvedValue(mockFetchPromiseObject);
-        let include = chance.string();
-        let parameters = {include: [include]};
+    'when %s calls fetch and server returns empty success response it should return successful',
+    async methodName => {
+      // arrange
+      let endpoint = chance.string();
+      let spy = jest.spyOn(rdClient, '_fetch').mockResolvedValue(mockFetchPromiseObject);
+      let include = chance.string();
+      let parameters = { include: [include] };
 
-        // act
-        const result = await rdClient[methodName](endpoint, parameters);
+      // act
+      const result = await rdClient[methodName](endpoint, parameters);
 
-        // assert
-        expect.assertions(3);
-        expect(result).toEqual(mockText);
-        expect(spy).toHaveBeenCalledTimes(1);
-        expect(mockFetchResultObject.text).toHaveBeenCalledTimes(1);
-      });
+      // assert
+      expect.assertions(3);
+      expect(result).toEqual(mockText);
+      expect(spy).toHaveBeenCalledTimes(1);
+      expect(mockFetchResultObject.text).toHaveBeenCalledTimes(1);
+    }
+  );
 
   test.each([['get'], ['put'], ['post'], ['delete']])(
-      'when %s calls fetch and server returns empty error response it should return not successful',
-      async (methodName) => {
-        // arrange
-        mockFetchResultObject.ok = false
-        let endpoint = chance.string();
-        let spy = jest.spyOn(rdClient, '_fetch').mockResolvedValue(mockFetchPromiseObject);
-        let include = chance.string();
-        let parameters = {include: [include]};
+    'when %s calls fetch and server returns empty error response it should return not successful',
+    async methodName => {
+      // arrange
+      mockFetchResultObject.ok = false;
+      let endpoint = chance.string();
+      let spy = jest.spyOn(rdClient, '_fetch').mockResolvedValue(mockFetchPromiseObject);
+      let include = chance.string();
+      let parameters = { include: [include] };
 
-        // act
-        const result = await rdClient[methodName](endpoint, parameters);
+      // act
+      const result = await rdClient[methodName](endpoint, parameters);
 
-        // assert
-        expect.assertions(3);
-        expect(result).toEqual(mockFetchResultObject);
-        expect(spy).toHaveBeenCalledTimes(1);
-        expect(mockFetchResultObject.text).toHaveBeenCalledTimes(0);
-      });
-
-})
+      // assert
+      expect.assertions(3);
+      expect(result).toEqual(mockFetchResultObject);
+      expect(spy).toHaveBeenCalledTimes(1);
+      expect(mockFetchResultObject.text).toHaveBeenCalledTimes(0);
+    }
+  );
+});
 
 describe('get', () => {
-
   test('get calls fetch with method GET - fail', () => {
     // setup and configure chance
     let chance = new Chance();
@@ -91,7 +89,8 @@ describe('get', () => {
     let rdClient = new Client(options);
     let endpoint = chance.string();
     let spy = jest.spyOn(rdClient, '_fetch').mockResolvedValue({
-      ok: false, json: () => {
+      ok: false,
+      json: () => {
         return {};
       }
     });
@@ -99,8 +98,8 @@ describe('get', () => {
     // act
     let response = rdClient.get(endpoint);
 
-      // assert
-      expect(spy.mock.calls.length).toBe(1);
+    // assert
+    expect(spy.mock.calls.length).toBe(1);
   });
 
   test('get calls fetch with method GET - success', () => {
@@ -115,7 +114,12 @@ describe('get', () => {
     // arrange
     let rdClient = new Client(options);
     let endpoint = chance.string();
-    let spy = jest.spyOn(rdClient, '_fetch').mockResolvedValue({ok: true, json: () => { return {}; }});
+    let spy = jest.spyOn(rdClient, '_fetch').mockResolvedValue({
+      ok: true,
+      json: () => {
+        return {};
+      }
+    });
 
     // act
     let response = rdClient.get(endpoint);
@@ -137,43 +141,52 @@ describe('get', () => {
     // arrange
     let rdClient = new Client(options);
     let endpoint = chance.string();
-    let spy = jest.spyOn(rdClient, '_fetch').mockResolvedValue({ok: true, json: () => { return {}; }});
+    let spy = jest.spyOn(rdClient, '_fetch').mockResolvedValue({
+      ok: true,
+      json: () => {
+        return {};
+      }
+    });
     let include = chance.string();
-    let parameters = {include: [include]};
+    let parameters = { include: [include] };
 
     // act
     let response = rdClient.get(endpoint, parameters);
 
     // assert
     expect(spy.mock.calls.length).toBe(1);
-    expect(spy.mock.calls[0][0]).toEqual(`https://api-dev.rentdynamics.com${endpoint}?include=${include}`);
+    expect(spy.mock.calls[0][0]).toEqual(
+      `https://api-dev.rentdynamics.com${endpoint}?include=${include}`
+    );
   });
-
 });
 
-
 describe('put', () => {
-
   test('put calls fetch with method PUT - fail', () => {
-      // setup and configure chance
-      let chance = new Chance();
+    // setup and configure chance
+    let chance = new Chance();
 
-      // setup options for client
-      let options = new ClientOptions();
-      options.apiKey = chance.string();
-      options.apiSecretKey = chance.string();
+    // setup options for client
+    let options = new ClientOptions();
+    options.apiKey = chance.string();
+    options.apiSecretKey = chance.string();
 
-      // arrange
-      let rdClient = new Client(options);
-      let payload = {};
-      let endpoint = chance.string();
-      let spy = jest.spyOn(rdClient, '_fetch').mockResolvedValue({ok: false, json: () => { return {}; }});
+    // arrange
+    let rdClient = new Client(options);
+    let payload = {};
+    let endpoint = chance.string();
+    let spy = jest.spyOn(rdClient, '_fetch').mockResolvedValue({
+      ok: false,
+      json: () => {
+        return {};
+      }
+    });
 
-      // act
-      let response = rdClient.put(endpoint, payload);
+    // act
+    let response = rdClient.put(endpoint, payload);
 
-      // assert
-      expect(spy.mock.calls.length).toBe(1);
+    // assert
+    expect(spy.mock.calls.length).toBe(1);
   });
 
   test('put calls fetch with method PUT - success', () => {
@@ -189,7 +202,12 @@ describe('put', () => {
     let rdClient = new Client(options);
     let payload = {};
     let endpoint = chance.string();
-    let spy = jest.spyOn(rdClient, '_fetch').mockResolvedValue({ok: true, json: () => { return {}; }});
+    let spy = jest.spyOn(rdClient, '_fetch').mockResolvedValue({
+      ok: true,
+      json: () => {
+        return {};
+      }
+    });
 
     // act
     let response = rdClient.put(endpoint, payload);
@@ -197,32 +215,34 @@ describe('put', () => {
     // assert
     expect(spy.mock.calls.length).toBe(1);
   });
-
 });
 
-
 describe('post', () => {
-
   test('post calls fetch with method POST - fail', () => {
-      // setup and configure chance
-      let chance = new Chance();
+    // setup and configure chance
+    let chance = new Chance();
 
-      // setup options for client
-      let options = new ClientOptions();
-      options.apiKey = chance.string();
-      options.apiSecretKey = chance.string();
+    // setup options for client
+    let options = new ClientOptions();
+    options.apiKey = chance.string();
+    options.apiSecretKey = chance.string();
 
-      // arrange
-      let rdClient = new Client(options);
-      let payload = {};
-      let endpoint = chance.string();
-      let spy = jest.spyOn(rdClient, '_fetch').mockResolvedValue({ok: false, json: () => { return {}; }});
+    // arrange
+    let rdClient = new Client(options);
+    let payload = {};
+    let endpoint = chance.string();
+    let spy = jest.spyOn(rdClient, '_fetch').mockResolvedValue({
+      ok: false,
+      json: () => {
+        return {};
+      }
+    });
 
-      // act
-      let response = rdClient.post(endpoint, payload);
+    // act
+    let response = rdClient.post(endpoint, payload);
 
-      // assert
-      expect(spy.mock.calls.length).toBe(1);
+    // assert
+    expect(spy.mock.calls.length).toBe(1);
   });
 
   test('post calls fetch with method POST - success', () => {
@@ -238,7 +258,12 @@ describe('post', () => {
     let rdClient = new Client(options);
     let payload = {};
     let endpoint = chance.string();
-    let spy = jest.spyOn(rdClient, '_fetch').mockResolvedValue({ok: true, json: () => { return {}; }});
+    let spy = jest.spyOn(rdClient, '_fetch').mockResolvedValue({
+      ok: true,
+      json: () => {
+        return {};
+      }
+    });
 
     // act
     let response = rdClient.post(endpoint, payload);
@@ -246,31 +271,33 @@ describe('post', () => {
     // assert
     expect(spy.mock.calls.length).toBe(1);
   });
-
 });
 
-
 describe('delete', () => {
-
   test('delete calls fetch with method DELETE - fail', () => {
-      // setup and configure chance
-      let chance = new Chance();
+    // setup and configure chance
+    let chance = new Chance();
 
-      // setup options for client
-      let options = new ClientOptions();
-      options.apiKey = chance.string();
-      options.apiSecretKey = chance.string();
+    // setup options for client
+    let options = new ClientOptions();
+    options.apiKey = chance.string();
+    options.apiSecretKey = chance.string();
 
-      // arrange
-      let rdClient = new Client(options);
-      let endpoint = chance.string();
-      let spy = jest.spyOn(rdClient, '_fetch').mockResolvedValue({ok: false, json: () => { return {}; }});
+    // arrange
+    let rdClient = new Client(options);
+    let endpoint = chance.string();
+    let spy = jest.spyOn(rdClient, '_fetch').mockResolvedValue({
+      ok: false,
+      json: () => {
+        return {};
+      }
+    });
 
-      // act
-      let response = rdClient.delete(endpoint);
+    // act
+    let response = rdClient.delete(endpoint);
 
-      // assert
-      expect(spy.mock.calls.length).toBe(1);
+    // assert
+    expect(spy.mock.calls.length).toBe(1);
   });
 
   test('delete calls fetch with method DELETE - success', () => {
@@ -285,7 +312,12 @@ describe('delete', () => {
     // arrange
     let rdClient = new Client(options);
     let endpoint = chance.string();
-    let spy = jest.spyOn(rdClient, '_fetch').mockResolvedValue({ok: true, json: () => { return {}; }});
+    let spy = jest.spyOn(rdClient, '_fetch').mockResolvedValue({
+      ok: true,
+      json: () => {
+        return {};
+      }
+    });
 
     // act
     let response = rdClient.delete(endpoint);
@@ -293,32 +325,34 @@ describe('delete', () => {
     // assert
     expect(spy.mock.calls.length).toBe(1);
   });
-
 });
 
-
 describe('login', () => {
-
   test('login calls', () => {
-      // setup and configure chance
-      let chance = new Chance();
+    // setup and configure chance
+    let chance = new Chance();
 
-      // setup options for client
-      let options = new ClientOptions();
-      options.apiKey = chance.string();
-      options.apiSecretKey = chance.string();
+    // setup options for client
+    let options = new ClientOptions();
+    options.apiKey = chance.string();
+    options.apiSecretKey = chance.string();
 
-      // arrange
-      let rdClient = new Client(options);
-      let username = chance.string();
-      let password = chance.string();
-      let spy = jest.spyOn(rdClient, '_fetch').mockResolvedValue({ok: false, json: () => { return {authToken: chance.string()}; }});
+    // arrange
+    let rdClient = new Client(options);
+    let username = chance.string();
+    let password = chance.string();
+    let spy = jest.spyOn(rdClient, '_fetch').mockResolvedValue({
+      ok: false,
+      json: () => {
+        return { authToken: chance.string() };
+      }
+    });
 
-      // act
-      let response = rdClient.login(username, password);
+    // act
+    let response = rdClient.login(username, password);
 
-      // assert
-      expect(spy.mock.calls.length).toBe(1);
+    // assert
+    expect(spy.mock.calls.length).toBe(1);
   });
 
   test('when login calls post authToken should be set to returned token', async () => {
@@ -335,7 +369,9 @@ describe('login', () => {
     let rdClient = new Client(options);
     let username = chance.string();
     let password = chance.string();
-    let spyPost = jest.spyOn(rdClient, 'post').mockReturnValue(Promise.resolve({ token: expectedToken }));
+    let spyPost = jest
+      .spyOn(rdClient, 'post')
+      .mockReturnValue(Promise.resolve({ token: expectedToken }));
 
     // act
     let response = await rdClient.login(username, password);
@@ -344,12 +380,9 @@ describe('login', () => {
     expect(spyPost).toHaveBeenCalledTimes(1);
     expect(options.authToken).toEqual(expectedToken);
   });
-
 });
 
-
 describe('logout', () => {
-
   test('logout calls', () => {
     // setup and configure chance
     let chance = new Chance();
@@ -362,7 +395,12 @@ describe('logout', () => {
 
     // arrange
     let rdClient = new Client(options);
-    let spy = jest.spyOn(rdClient, '_fetch').mockResolvedValue({ok: true, json: () => { return {authToken: null}; }});
+    let spy = jest.spyOn(rdClient, '_fetch').mockResolvedValue({
+      ok: true,
+      json: () => {
+        return { authToken: null };
+      }
+    });
 
     // act
     let response = rdClient.logout();
@@ -385,7 +423,7 @@ describe('logout', () => {
 
     // arrange
     let rdClient = new Client(options);
-    let spyPost = jest.spyOn(rdClient, 'post').mockReturnValue(Promise.resolve({ }));
+    let spyPost = jest.spyOn(rdClient, 'post').mockReturnValue(Promise.resolve({}));
 
     // act
     let response = await rdClient.logout();
@@ -394,12 +432,9 @@ describe('logout', () => {
     expect(spyPost).toHaveBeenCalledTimes(1);
     expect(options.authToken).toEqual(expectedToken);
   });
-
 });
 
-
 describe('formatPayload', () => {
-
   test('should alphabetize items in dictionary', () => {
     // arrange
     let payload = { orange: 1, blue: 2 };
@@ -441,7 +476,7 @@ describe('formatPayload', () => {
 
   test('should remove spaces from formatted items', () => {
     // arrange
-    let payload = { orange: 1, blue: { red: "a  f  g", pink: "b  t  g" } };
+    let payload = { orange: 1, blue: { red: 'a  f  g', pink: 'b  t  g' } };
     let options = new ClientOptions();
     let clientHelpers = new ClientHelpers(options);
 
@@ -489,12 +524,9 @@ describe('formatPayload', () => {
     expect(result['blue'][1]).toEqual(5);
     expect(result['blue'][2]).toEqual(2);
   });
-
 });
 
-
 describe('getNonce', () => {
-
   test('should handle arrays of primitive values', () => {
     // arrange
     let chance = new Chance();
@@ -528,8 +560,8 @@ describe('getNonce', () => {
     let payload = {
       orange: 1,
       blue: {
-        red: "a  f  g",
-        pink: "b  t  g"
+        red: 'a  f  g',
+        pink: 'b  t  g'
       }
     };
     let options = new ClientOptions();
@@ -579,8 +611,8 @@ describe('getNonce', () => {
     let payload = {
       orange: 1,
       blue: {
-        red: "a  f  g",
-        pink: "b  t  g"
+        red: 'a  f  g',
+        pink: 'b  t  g'
       }
     };
     let options = new ClientOptions();
@@ -596,12 +628,9 @@ describe('getNonce', () => {
     // assert
     expect(result).toEqual('');
   });
-
 });
 
-
 describe('getHeaders', () => {
-
   test('should return authorization header if there is an authToken', () => {
     // arrange
     let chance = new Chance();
@@ -719,12 +748,9 @@ describe('getHeaders', () => {
     expect(result['x-rd-timestamp']).toEqual(undefined);
     expect(result['Content-Type']).toEqual(undefined);
   });
-
 });
 
-
 describe('getBaseUrl', () => {
-
   test('should return correct url in development', () => {
     // arrange
     let options = new ClientOptions();
@@ -742,7 +768,7 @@ describe('getBaseUrl', () => {
     // arrange
     let options = new ClientOptions();
     options.development = true;
-    options.developmentUrl = 'https://my-new.site.com'
+    options.developmentUrl = 'https://my-new.site.com';
     let clientHelpers = new ClientHelpers(options);
 
     // act
@@ -756,7 +782,7 @@ describe('getBaseUrl', () => {
     // arrange
     let options = new ClientOptions();
     options.development = false;
-    options.developmentUrl = 'https://my-new.site.com'
+    options.developmentUrl = 'https://my-new.site.com';
     let clientHelpers = new ClientHelpers(options);
 
     // act
@@ -792,19 +818,16 @@ describe('getBaseUrl', () => {
     //assert
     expect(result).toEqual('https://api.rentplus.com');
   });
-
 });
 
-
 describe('stringifyParameters', () => {
-
   test('should stringify basic parameters', () => {
     // arrange
     let options = new ClientOptions();
     options.development = true;
     let clientHelpers = new ClientHelpers(options);
     let parameters = {
-      filters: {id: 10},
+      filters: { id: 10 },
       include: ['hobby'],
       exclude: ['age'],
       fields: ['id', 'name'],
@@ -840,7 +863,7 @@ describe('stringifyParameters', () => {
         hobby: { id: 10 },
         nullValue: null,
         emptyArray: [],
-        emptySubObj: {id: null}
+        emptySubObj: { id: null }
       }
     };
 
@@ -855,5 +878,4 @@ describe('stringifyParameters', () => {
     expect(result).not.toContain('emptyArray');
     expect(result).not.toContain('emptySubObj');
   });
-
 });
