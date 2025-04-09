@@ -86,6 +86,8 @@ workflows:
           requires: [prepare]
 
       - publish-npm:
+          context:
+            - RentDynamicsGeneral
           requires: [test]
           filters:
             branches:
@@ -93,6 +95,8 @@ workflows:
                 - master
 
       - publish-cdn-dev:
+          context:
+            - RentDynamicsGeneral
           requires: [test]
           filters:
             branches:
@@ -101,6 +105,8 @@ workflows:
                 - /^.*__dev$/
 
       - publish-cdn-prod:
+          context:
+            - RentDynamicsGeneral
           requires: [publish-npm, publish-cdn-dev]
           filters:
             branches:
