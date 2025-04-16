@@ -6,7 +6,7 @@ orbs:
 executors:
   node:
     docker:
-      - image: cimg/node:10.24.1
+      - image: cimg/node:18.20.5
     working_directory: ~/rentdynamics-js
 
 jobs:
