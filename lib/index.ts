@@ -1,11 +1,7 @@
-import jsSHA from 'jssha';
-
-declare var global: any;
-
 export class Client {
   private helpers: ClientHelpers;
   private options: ClientOptions;
-  public _fetch: any;
+  public _fetch: typeof global.fetch;
 
   constructor(options: ClientOptions) {
     this.options = options;
@@ -13,7 +9,7 @@ export class Client {
     if (typeof global !== 'undefined' && global && global.fetch) {
       this._fetch = global.fetch.bind(global);
     } else {
-      let crossFetch = require('cross-fetch');
+      const crossFetch = require('cross-fetch');
       this._fetch = crossFetch;
     }
   }
@@ -81,15 +77,18 @@ export class Client {
     });
   }
 
-  public login(username: string, password: string): Promise<any> {
-    let shaObj = new jsSHA('SHA-1', 'TEXT');
-    shaObj.update(password);
-    password = shaObj.getHash('HEX');
+  public async login(username: string, password: string): Promise<any> {
+    password = await this.encryptPassword(password);
     let endpoint = '/auth/login';
-    return this.post(endpoint, { username: username, password: password }).then(result => {
-      this.options.authToken = result.token;
-      return result;
-    });
+    const result = await this.post(endpoint, { username, password });
+    this.options.authToken = result.token;
+    return result;
+  }
+
+  async encryptPassword(password: string): Promise<string> {
+    const encodedPassword = new TextEncoder().encode(password);
+    const digestedPassword = await crypto.subtle.digest('SHA-1', encodedPassword);
+    return _hexDigest(digestedPassword);
   }
 
   public logout(): Promise<any> {
@@ -180,21 +179,20 @@ export class ClientHelpers {
     return headers;
   }
 
-  public getNonce(timestamp: number, endpoint: string, payloadStr?: string) {
-    if (this.options.apiSecretKey) {
-      let nonceStr = timestamp + endpoint;
-
-      if (typeof payloadStr !== 'undefined') {
-        nonceStr += payloadStr;
-      }
-      let shaObj = new jsSHA('SHA-1', 'TEXT');
-      shaObj.setHMACKey(this.options.apiSecretKey, 'TEXT');
-      shaObj.update(nonceStr);
-
-      return shaObj.getHMAC('HEX');
-    } else {
-      return '';
-    }
+  public async getNonce(timestamp: number, url: string, payloadStr?: string): Promise<string> {
+    if (!this.options.apiSecretKey) return Promise.resolve('');
+    const encodedUrl = encodeURI(url).replace(/%7[Cc]/g, '|');
+    const nonceStr =
+      typeof payloadStr !== 'undefined'
+        ? timestamp + encodedUrl + payloadStr
+        : timestamp + encodedUrl;
+    const encoder = new TextEncoder();
+    const key = encoder.encode(this.options.apiSecretKey);
+    const data = encoder.encode(nonceStr);
+    const algorithm = { name: 'HMAC', hash: 'SHA-1' };
+    const hmac = await crypto.subtle.importKey('raw', key, algorithm, false, ['sign']);
+    const signed = await crypto.subtle.sign(algorithm.name, hmac, data);
+    return _hexDigest(signed);
   }
 
   public stringifyParameters(object: any): string {
@@ -261,3 +259,8 @@ export class ClientHelpers {
     return results.join('|');
   }
 }
+
+const _hexDigest = (buf: ArrayBuffer): string =>
+  Array.from(new Uint8Array(buf))
+    .map(b => b.toString(16).padStart(2, '0'))
+    .join('');

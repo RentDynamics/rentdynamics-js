@@ -1,6 +1,17 @@
 import { Client, ClientOptions, ClientHelpers } from './index';
 import Chance from 'chance';
-import jsSHA from 'jssha';
+
+const createFetchMock = (ok = true) => {
+  const m = {
+    ok,
+    json: () => Promise.resolve(m),
+    clone: () => m,
+    text: () => Promise.resolve(''),
+    catch: () => {}
+  };
+
+  return Promise.resolve(m);
+};
 
 describe('all', () => {
   // setup and configure chance
@@ -30,8 +41,6 @@ describe('all', () => {
       cb(mockFetchResultObject);
     }
   };
-
-  beforeEach(() => {});
 
   test.each([['get'], ['put'], ['post'], ['delete']])(
     'when %s calls fetch and server returns empty success response it should return successful',
@@ -76,7 +85,7 @@ describe('all', () => {
 });
 
 describe('get', () => {
-  test('get calls fetch with method GET - fail', () => {
+  test('get calls fetch with method GET - fail', async () => {
     // setup and configure chance
     let chance = new Chance();
 
@@ -88,21 +97,16 @@ describe('get', () => {
     // arrange
     let rdClient = new Client(options);
     let endpoint = chance.string();
-    let spy = jest.spyOn(rdClient, '_fetch').mockResolvedValue({
-      ok: false,
-      json: () => {
-        return {};
-      }
-    });
+    let spy = jest.spyOn(rdClient, '_fetch').mockResolvedValue(createFetchMock(false));
 
     // act
-    let response = rdClient.get(endpoint);
+    let response = await rdClient.get(endpoint);
 
     // assert
     expect(spy.mock.calls.length).toBe(1);
   });
 
-  test('get calls fetch with method GET - success', () => {
+  test('get calls fetch with method GET - success', async () => {
     // setup and configure chance
     let chance = new Chance();
 
@@ -114,21 +118,16 @@ describe('get', () => {
     // arrange
     let rdClient = new Client(options);
     let endpoint = chance.string();
-    let spy = jest.spyOn(rdClient, '_fetch').mockResolvedValue({
-      ok: true,
-      json: () => {
-        return {};
-      }
-    });
+    let spy = jest.spyOn(rdClient, '_fetch').mockResolvedValue(createFetchMock());
 
     // act
-    let response = rdClient.get(endpoint);
+    let response = await rdClient.get(endpoint);
 
     // assert
     expect(spy.mock.calls.length).toBe(1);
   });
 
-  test('get with parameters calls fetch with method GET - success', () => {
+  test('get with parameters calls fetch with method GET - success', async () => {
     // setup and configure chance
     let chance = new Chance();
 
@@ -141,17 +140,12 @@ describe('get', () => {
     // arrange
     let rdClient = new Client(options);
     let endpoint = chance.string();
-    let spy = jest.spyOn(rdClient, '_fetch').mockResolvedValue({
-      ok: true,
-      json: () => {
-        return {};
-      }
-    });
+    let spy = jest.spyOn(rdClient, '_fetch').mockResolvedValue(createFetchMock());
     let include = chance.string();
     let parameters = { include: [include] };
 
     // act
-    let response = rdClient.get(endpoint, parameters);
+    let response = await rdClient.get(endpoint, parameters);
 
     // assert
     expect(spy.mock.calls.length).toBe(1);
@@ -162,7 +156,7 @@ describe('get', () => {
 });
 
 describe('put', () => {
-  test('put calls fetch with method PUT - fail', () => {
+  test('put calls fetch with method PUT - fail', async () => {
     // setup and configure chance
     let chance = new Chance();
 
@@ -175,21 +169,16 @@ describe('put', () => {
     let rdClient = new Client(options);
     let payload = {};
     let endpoint = chance.string();
-    let spy = jest.spyOn(rdClient, '_fetch').mockResolvedValue({
-      ok: false,
-      json: () => {
-        return {};
-      }
-    });
+    let spy = jest.spyOn(rdClient, '_fetch').mockResolvedValue(createFetchMock(false));
 
     // act
-    let response = rdClient.put(endpoint, payload);
+    let response = await rdClient.put(endpoint, payload);
 
     // assert
     expect(spy.mock.calls.length).toBe(1);
   });
 
-  test('put calls fetch with method PUT - success', () => {
+  test('put calls fetch with method PUT - success', async () => {
     // setup and configure chance
     let chance = new Chance();
 
@@ -202,15 +191,10 @@ describe('put', () => {
     let rdClient = new Client(options);
     let payload = {};
     let endpoint = chance.string();
-    let spy = jest.spyOn(rdClient, '_fetch').mockResolvedValue({
-      ok: true,
-      json: () => {
-        return {};
-      }
-    });
+    let spy = jest.spyOn(rdClient, '_fetch').mockResolvedValue(createFetchMock(false));
 
     // act
-    let response = rdClient.put(endpoint, payload);
+    let response = await rdClient.put(endpoint, payload);
 
     // assert
     expect(spy.mock.calls.length).toBe(1);
@@ -218,7 +202,7 @@ describe('put', () => {
 });
 
 describe('post', () => {
-  test('post calls fetch with method POST - fail', () => {
+  test('post calls fetch with method POST - fail', async () => {
     // setup and configure chance
     let chance = new Chance();
 
@@ -231,21 +215,16 @@ describe('post', () => {
     let rdClient = new Client(options);
     let payload = {};
     let endpoint = chance.string();
-    let spy = jest.spyOn(rdClient, '_fetch').mockResolvedValue({
-      ok: false,
-      json: () => {
-        return {};
-      }
-    });
+    let spy = jest.spyOn(rdClient, '_fetch').mockResolvedValue(createFetchMock(false));
 
     // act
-    let response = rdClient.post(endpoint, payload);
+    let response = await rdClient.post(endpoint, payload);
 
     // assert
     expect(spy.mock.calls.length).toBe(1);
   });
 
-  test('post calls fetch with method POST - success', () => {
+  test('post calls fetch with method POST - success', async () => {
     // setup and configure chance
     let chance = new Chance();
 
@@ -258,15 +237,10 @@ describe('post', () => {
     let rdClient = new Client(options);
     let payload = {};
     let endpoint = chance.string();
-    let spy = jest.spyOn(rdClient, '_fetch').mockResolvedValue({
-      ok: true,
-      json: () => {
-        return {};
-      }
-    });
+    let spy = jest.spyOn(rdClient, '_fetch').mockResolvedValue(createFetchMock());
 
     // act
-    let response = rdClient.post(endpoint, payload);
+    let response = await rdClient.post(endpoint, payload);
 
     // assert
     expect(spy.mock.calls.length).toBe(1);
@@ -274,7 +248,7 @@ describe('post', () => {
 });
 
 describe('delete', () => {
-  test('delete calls fetch with method DELETE - fail', () => {
+  test('delete calls fetch with method DELETE - fail', async () => {
     // setup and configure chance
     let chance = new Chance();
 
@@ -286,21 +260,16 @@ describe('delete', () => {
     // arrange
     let rdClient = new Client(options);
     let endpoint = chance.string();
-    let spy = jest.spyOn(rdClient, '_fetch').mockResolvedValue({
-      ok: false,
-      json: () => {
-        return {};
-      }
-    });
+    let spy = jest.spyOn(rdClient, '_fetch').mockResolvedValue(createFetchMock(false));
 
     // act
-    let response = rdClient.delete(endpoint);
+    let response = await rdClient.delete(endpoint);
 
     // assert
     expect(spy.mock.calls.length).toBe(1);
   });
 
-  test('delete calls fetch with method DELETE - success', () => {
+  test('delete calls fetch with method DELETE - success', async () => {
     // setup and configure chance
     let chance = new Chance();
 
@@ -312,15 +281,10 @@ describe('delete', () => {
     // arrange
     let rdClient = new Client(options);
     let endpoint = chance.string();
-    let spy = jest.spyOn(rdClient, '_fetch').mockResolvedValue({
-      ok: true,
-      json: () => {
-        return {};
-      }
-    });
+    let spy = jest.spyOn(rdClient, '_fetch').mockResolvedValue(createFetchMock());
 
     // act
-    let response = rdClient.delete(endpoint);
+    let response = await rdClient.delete(endpoint);
 
     // assert
     expect(spy.mock.calls.length).toBe(1);
@@ -328,7 +292,7 @@ describe('delete', () => {
 });
 
 describe('login', () => {
-  test('login calls', () => {
+  test('login calls', async () => {
     // setup and configure chance
     let chance = new Chance();
 
@@ -341,15 +305,10 @@ describe('login', () => {
     let rdClient = new Client(options);
     let username = chance.string();
     let password = chance.string();
-    let spy = jest.spyOn(rdClient, '_fetch').mockResolvedValue({
-      ok: false,
-      json: () => {
-        return { authToken: chance.string() };
-      }
-    });
+    let spy = jest.spyOn(rdClient, '_fetch').mockResolvedValue(createFetchMock(false));
 
     // act
-    let response = rdClient.login(username, password);
+    let response = await rdClient.login(username, password);
 
     // assert
     expect(spy.mock.calls.length).toBe(1);
@@ -383,7 +342,7 @@ describe('login', () => {
 });
 
 describe('logout', () => {
-  test('logout calls', () => {
+  test('logout calls', async () => {
     // setup and configure chance
     let chance = new Chance();
 
@@ -395,15 +354,10 @@ describe('logout', () => {
 
     // arrange
     let rdClient = new Client(options);
-    let spy = jest.spyOn(rdClient, '_fetch').mockResolvedValue({
-      ok: true,
-      json: () => {
-        return { authToken: null };
-      }
-    });
+    let spy = jest.spyOn(rdClient, '_fetch').mockResolvedValue(createFetchMock());
 
     // act
-    let response = rdClient.logout();
+    let response = await rdClient.logout();
 
     // assert
     expect(spy).toHaveBeenCalled();
@@ -527,103 +481,76 @@ describe('formatPayload', () => {
 });
 
 describe('getNonce', () => {
-  test('should handle arrays of primitive values', () => {
+  const timestamp = 1744825113438;
+  const url = '/someUrlolz';
+  let clientHelpers!: ClientHelpers;
+
+  beforeEach(() => {
+    const options = new ClientOptions();
+    options.apiKey = 'nJYLab]!';
+    options.apiSecretKey = 'ka4B#%NYx';
+    clientHelpers = new ClientHelpers(options);
+  });
+
+  const getFormattedPayloadFor = (payload: Record<string, any>) =>
+    JSON.stringify(clientHelpers.formatPayload(payload));
+
+  test('should handle arrays of primitive values', async () => {
     // arrange
-    let chance = new Chance();
-    let payload = {
+    const formattedPayload = getFormattedPayloadFor({
       orange: 5,
       blue: [1, 5, 2]
-    };
-    let options = new ClientOptions();
-    options.apiKey = chance.string();
-    options.apiSecretKey = chance.string();
-    let clientHelpers = new ClientHelpers(options);
-    let formattedPayload = JSON.stringify(clientHelpers.formatPayload(payload));
-    let timestamp = Date.now();
-    let url = '/someUrlolz';
-    let nonce = timestamp + url + formattedPayload;
-    var shaObj = new jsSHA('SHA-1', 'TEXT');
-    shaObj.setHMACKey(options.apiSecretKey, 'TEXT');
-    shaObj.update(nonce);
-    let hashedNonce = shaObj.getHMAC('HEX');
+    });
 
     // act
-    let result = clientHelpers.getNonce(timestamp, url, formattedPayload);
+    const result = await clientHelpers.getNonce(timestamp, url, formattedPayload);
 
     // assert
-    expect(hashedNonce).toEqual(result);
+    expect(result).toEqual('0da0f05839bef83df7382f9d936c236418f7bb3c');
   });
 
-  test('should return hash of timestamp, url, payload and secret key', () => {
+  test('should return hash of timestamp, url, payload and secret key', async () => {
     // arrange
-    let chance = new Chance();
-    let payload = {
+    const formattedPayload = getFormattedPayloadFor({
       orange: 1,
       blue: {
         red: 'a  f  g',
         pink: 'b  t  g'
       }
-    };
-    let options = new ClientOptions();
-    options.apiKey = chance.string();
-    options.apiSecretKey = chance.string();
-    let clientHelpers = new ClientHelpers(options);
-    let formattedPayload = JSON.stringify(clientHelpers.formatPayload(payload));
-    let timestamp = Date.now();
-    let url = '/someUrlolz';
-    let nonce = timestamp + url + formattedPayload;
-    var shaObj = new jsSHA('SHA-1', 'TEXT');
-    shaObj.setHMACKey(options.apiSecretKey, 'TEXT');
-    shaObj.update(nonce);
-    let hashedNonce = shaObj.getHMAC('HEX');
+    });
 
     // act
-    let result = clientHelpers.getNonce(timestamp, url, formattedPayload);
+    const result = await clientHelpers.getNonce(timestamp, url, formattedPayload);
 
     // assert
-    expect(hashedNonce).toEqual(result);
+    expect(result).toEqual('608e3b1b7fc9f68b226275d8125554adf1f44086');
   });
 
-  test('should return hash of timestamp, url and secret key if no payload exists', () => {
-    // arrange
-    let chance = new Chance();
-    let options = new ClientOptions();
-    options.apiKey = chance.string();
-    options.apiSecretKey = chance.string();
-    let clientHelpers = new ClientHelpers(options);
-    let timestamp = Date.now();
-    let url = '/someUrlolz';
-    let nonce = timestamp + url;
-    var shaObj = new jsSHA('SHA-1', 'TEXT');
-    shaObj.setHMACKey(options.apiSecretKey, 'TEXT');
-    shaObj.update(nonce);
-    let hashedNonce = shaObj.getHMAC('HEX');
-
-    // act
-    let result = clientHelpers.getNonce(timestamp, url);
+  test('should return hash of timestamp, url and secret key if no payload exists', async () => {
+    // arrange / act
+    const result = await clientHelpers.getNonce(timestamp, url);
 
     // assert
-    expect(hashedNonce).toEqual(result);
+    expect(result).toEqual('a724eb47b4fc644b2fe1fd5a0b778fc6cff1930c');
   });
 
-  test('should return empty string if missing apiSecretKey', () => {
+  test('should return empty string if missing apiSecretKey', async () => {
     // arrange
-    let payload = {
-      orange: 1,
-      blue: {
-        red: 'a  f  g',
-        pink: 'b  t  g'
-      }
-    };
-    let options = new ClientOptions();
-    options.apiSecretKey = undefined;
-    let clientHelpers = new ClientHelpers(options);
-    let formattedPayload = JSON.stringify(clientHelpers.formatPayload(payload));
-    let timestamp = Date.now();
-    let url = '/someUrlolz';
+    const o = new ClientOptions();
+    o.apiKey = 'nJYLab]!';
+    const c = new ClientHelpers(o);
+    const formattedPayload = c.formatPayload(
+      JSON.stringify({
+        orange: 1,
+        blue: {
+          red: 'a  f  g',
+          pink: 'b  t  g'
+        }
+      })
+    );
 
     // act
-    let result = clientHelpers.getNonce(timestamp, url, formattedPayload);
+    const result = await c.getNonce(timestamp, url, formattedPayload);
 
     // assert
     expect(result).toEqual('');
