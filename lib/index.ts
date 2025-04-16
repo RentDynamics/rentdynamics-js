@@ -1,102 +1,69 @@
 export class Client {
   private helpers: ClientHelpers;
   private options: ClientOptions;
-  public _fetch: typeof global.fetch;
 
   constructor(options: ClientOptions) {
     this.options = options;
     this.helpers = new ClientHelpers(options);
-    if (typeof global !== 'undefined' && global && global.fetch) {
-      this._fetch = global.fetch.bind(global);
-    } else {
-      const crossFetch = require('cross-fetch');
-      this._fetch = crossFetch;
-    }
   }
 
-  public get(endpoint: string, parameters: object = {}): Promise<any> {
+  public get(endpoint: string, parameters: object = {}) {
     let queryParams = this.helpers.stringifyParameters(parameters);
     let options: RequestInit = {};
     options.method = 'GET';
     options.headers = this.helpers.getHeaders(endpoint + queryParams);
     let fullUrl = this.helpers.getBaseUrl() + endpoint + queryParams;
-    return this._fetch(fullUrl.replace(/\|/g, '%7C'), options).then((result: Response) => {
-      return result.ok
-        ? result
-            .clone()
-            .json()
-            .catch(err => result.clone().text())
-        : result;
-    });
+    return fetch(fullUrl.replace(/\|/g, '%7C'), options);
   }
 
-  public put(endpoint: string, payload: object): Promise<any> {
+  public put(endpoint: string, payload: object) {
     let options: RequestInit = {};
     options.method = 'PUT';
     options.headers = this.helpers.getHeaders(endpoint, payload);
     options.body = JSON.stringify(payload);
     let fullUrl = this.helpers.getBaseUrl() + endpoint;
-    return this._fetch(fullUrl, options).then((result: Response) => {
-      return result.ok
-        ? result
-            .clone()
-            .json()
-            .catch(err => result.clone().text())
-        : result;
-    });
+    return fetch(fullUrl, options);
   }
 
-  public post(endpoint: string, payload: object): Promise<any> {
+  public post(endpoint: string, payload: object) {
     let options: RequestInit = {};
     options.method = 'POST';
     options.headers = this.helpers.getHeaders(endpoint, payload);
     options.body = JSON.stringify(payload);
     let fullUrl = this.helpers.getBaseUrl() + endpoint;
-    return this._fetch(fullUrl, options).then((result: Response) => {
-      return result.ok
-        ? result
-            .clone()
-            .json()
-            .catch(err => result.clone().text())
-        : result;
-    });
+    return fetch(fullUrl, options);
   }
 
-  public delete(endpoint: string): Promise<any> {
+  public delete(endpoint: string) {
     let options: RequestInit = {};
     options.method = 'DELETE';
     options.headers = this.helpers.getHeaders(endpoint);
     let fullUrl = this.helpers.getBaseUrl() + endpoint;
-    return this._fetch(fullUrl, options).then((result: Response) => {
-      return result.ok
-        ? result
-            .clone()
-            .json()
-            .catch(err => result.clone().text())
-        : result;
-    });
+    return fetch(fullUrl, options);
   }
 
-  public async login(username: string, password: string): Promise<any> {
+  public async login(username: string, password: string) {
     password = await this.encryptPassword(password);
     let endpoint = '/auth/login';
     const result = await this.post(endpoint, { username, password });
-    this.options.authToken = result.token;
+    if (!result.ok) {
+      return result;
+    }
+    this.options.authToken = await result.text();
     return result;
   }
 
-  async encryptPassword(password: string): Promise<string> {
+  async encryptPassword(password: string) {
     const encodedPassword = new TextEncoder().encode(password);
     const digestedPassword = await crypto.subtle.digest('SHA-1', encodedPassword);
     return _hexDigest(digestedPassword);
   }
 
-  public logout(): Promise<any> {
+  public async logout() {
     let endpoint = '/auth/logout';
-    return this.post(endpoint, { authToken: this.options.authToken }).then(res => {
-      this.options.authToken = undefined;
-      return res;
-    });
+    const res = await this.post(endpoint, { authToken: this.options.authToken });
+    this.options.authToken = undefined;
+    return res;
   }
 }
 
@@ -105,7 +72,6 @@ export class ClientOptions {
   public apiSecretKey?: string = undefined;
   public authToken?: string = undefined;
   public development?: boolean = false;
-  public service?: string = undefined;
   public developmentUrl?: string = undefined;
   public baseUrl?: string = undefined;
 }

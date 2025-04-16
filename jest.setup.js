@@ -5,3 +5,4 @@ const crypto = require('crypto');
 global.TextEncoder = util.TextEncoder;
 // @ts-ignore
 global.crypto = crypto;
+global.fetch = jest.fn(() => {});

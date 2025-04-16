@@ -1,5 +1,6 @@
 module.exports = {
   clearMocks: true,
+  collectCoverage: true,
   coverageDirectory: 'coverage',
   coverageThreshold: {
     global: {
@@ -9,6 +10,7 @@ module.exports = {
       statements: 95
     }
   },
+  coveragePathIgnorePatterns: ['<rootDir>/jest.setup.js'],
   globals: {
     'ts-jest': {
       tsConfig: 'tsconfig.json'
@@ -19,6 +21,5 @@ module.exports = {
   transform: {
     '^.+\\.(ts|tsx)$': 'ts-jest'
   },
-  collectCoverage: true,
   setupFiles: ['<rootDir>/jest.setup.js']
 };

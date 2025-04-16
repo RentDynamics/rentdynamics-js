@@ -1,85 +1,64 @@
 import { Client, ClientOptions, ClientHelpers } from './index';
 import Chance from 'chance';
 
-const createFetchMock = (ok = true) => {
-  const m = {
-    ok,
-    json: () => Promise.resolve(m),
-    clone: () => m,
-    text: () => Promise.resolve(''),
-    catch: () => {}
+const createFetchMock = (overrides: Record<string, any> = {}) => {
+  const opts = {
+    ok: true,
+    json: '',
+    text: '',
+    ...overrides
   };
-
+  const m = {
+    ok: opts.ok,
+    json: () => Promise.resolve(opts.json),
+    clone: () => m,
+    text: () => Promise.resolve(opts.text),
+    catch: console.error
+  };
   return Promise.resolve(m);
 };
 
 describe('all', () => {
-  // setup and configure chance
-  let chance = new Chance();
-  // setup options for client
-  let options = new ClientOptions();
+  const chance = new Chance();
+  const options = new ClientOptions();
   options.development = true;
   options.apiKey = chance.string();
   options.apiSecretKey = chance.string();
-  let rdClient: Client | any = new Client(options);
-  let mockText = '';
-  let mockFetchResultObject = {
-    ok: true,
-    clone: () => {
-      return mockFetchResultObject;
-    },
-    json: () => {
-      return mockFetchResultObject;
-    },
-    text: jest.fn().mockReturnValue(Promise.resolve(mockText)),
-    catch: (cb: any) => {
-      return cb(mockText);
-    }
-  };
-  let mockFetchPromiseObject = {
-    then: (cb: any) => {
-      cb(mockFetchResultObject);
-    }
-  };
+  const rdClient = new Client(options);
 
   test.each([['get'], ['put'], ['post'], ['delete']])(
     'when %s calls fetch and server returns empty success response it should return successful',
-    async methodName => {
+    async (methodName: 'get' | 'put' | 'post' | 'delete') => {
       // arrange
-      let endpoint = chance.string();
-      let spy = jest.spyOn(rdClient, '_fetch').mockResolvedValue(mockFetchPromiseObject);
-      let include = chance.string();
-      let parameters = { include: [include] };
+      const endpoint = chance.string();
+      const spy = jest.spyOn(global, 'fetch').mockResolvedValue(createFetchMock());
+      const include = chance.string();
+      const parameters = { include: [include] };
 
       // act
       const result = await rdClient[methodName](endpoint, parameters);
 
       // assert
-      expect.assertions(3);
-      expect(result).toEqual(mockText);
+      expect(await result.text()).toEqual('');
       expect(spy).toHaveBeenCalledTimes(1);
-      expect(mockFetchResultObject.text).toHaveBeenCalledTimes(1);
     }
   );
 
   test.each([['get'], ['put'], ['post'], ['delete']])(
     'when %s calls fetch and server returns empty error response it should return not successful',
-    async methodName => {
+    async (methodName: 'get' | 'put' | 'post' | 'delete') => {
       // arrange
-      mockFetchResultObject.ok = false;
-      let endpoint = chance.string();
-      let spy = jest.spyOn(rdClient, '_fetch').mockResolvedValue(mockFetchPromiseObject);
-      let include = chance.string();
-      let parameters = { include: [include] };
+      const endpoint = chance.string();
+      const spy = jest.spyOn(global, 'fetch').mockResolvedValue(createFetchMock({ ok: false }));
+      const include = chance.string();
+      const parameters = { include: [include] };
 
       // act
       const result = await rdClient[methodName](endpoint, parameters);
 
       // assert
-      expect.assertions(3);
-      expect(result).toEqual(mockFetchResultObject);
+      expect(await result.text()).toEqual('');
       expect(spy).toHaveBeenCalledTimes(1);
-      expect(mockFetchResultObject.text).toHaveBeenCalledTimes(0);
     }
   );
 });
@@ -97,7 +76,7 @@ describe('get', () => {
     // arrange
     let rdClient = new Client(options);
     let endpoint = chance.string();
-    let spy = jest.spyOn(rdClient, '_fetch').mockResolvedValue(createFetchMock(false));
+    let spy = jest.spyOn(global, 'fetch').mockResolvedValue(createFetchMock({ ok: false }));
 
     // act
     let response = await rdClient.get(endpoint);
@@ -118,7 +97,7 @@ describe('get', () => {
     // arrange
     let rdClient = new Client(options);
     let endpoint = chance.string();
-    let spy = jest.spyOn(rdClient, '_fetch').mockResolvedValue(createFetchMock());
+    let spy = jest.spyOn(global, 'fetch').mockResolvedValue(createFetchMock());
 
     // act
     let response = await rdClient.get(endpoint);
@@ -140,7 +119,7 @@ describe('get', () => {
     // arrange
     let rdClient = new Client(options);
     let endpoint = chance.string();
-    let spy = jest.spyOn(rdClient, '_fetch').mockResolvedValue(createFetchMock());
+    let spy = jest.spyOn(global, 'fetch').mockResolvedValue(createFetchMock());
     let include = chance.string();
     let parameters = { include: [include] };
 
@@ -169,7 +148,7 @@ describe('put', () => {
     let rdClient = new Client(options);
     let payload = {};
     let endpoint = chance.string();
-    let spy = jest.spyOn(rdClient, '_fetch').mockResolvedValue(createFetchMock(false));
+    let spy = jest.spyOn(global, 'fetch').mockResolvedValue(createFetchMock({ ok: false }));
 
     // act
     let response = await rdClient.put(endpoint, payload);
@@ -191,7 +170,7 @@ describe('put', () => {
     let rdClient = new Client(options);
     let payload = {};
     let endpoint = chance.string();
-    let spy = jest.spyOn(rdClient, '_fetch').mockResolvedValue(createFetchMock(false));
+    let spy = jest.spyOn(global, 'fetch').mockResolvedValue(createFetchMock({ ok: false }));
 
     // act
     let response = await rdClient.put(endpoint, payload);
@@ -215,7 +194,7 @@ describe('post', () => {
     let rdClient = new Client(options);
     let payload = {};
     let endpoint = chance.string();
-    let spy = jest.spyOn(rdClient, '_fetch').mockResolvedValue(createFetchMock(false));
+    let spy = jest.spyOn(global, 'fetch').mockResolvedValue(createFetchMock({ ok: false }));
 
     // act
     let response = await rdClient.post(endpoint, payload);
@@ -237,7 +216,7 @@ describe('post', () => {
     let rdClient = new Client(options);
     let payload = {};
     let endpoint = chance.string();
-    let spy = jest.spyOn(rdClient, '_fetch').mockResolvedValue(createFetchMock());
+    let spy = jest.spyOn(global, 'fetch').mockResolvedValue(createFetchMock());
 
     // act
     let response = await rdClient.post(endpoint, payload);
@@ -260,7 +239,7 @@ describe('delete', () => {
     // arrange
     let rdClient = new Client(options);
     let endpoint = chance.string();
-    let spy = jest.spyOn(rdClient, '_fetch').mockResolvedValue(createFetchMock(false));
+    let spy = jest.spyOn(global, 'fetch').mockResolvedValue(createFetchMock({ ok: false }));
 
     // act
     let response = await rdClient.delete(endpoint);
@@ -281,7 +260,7 @@ describe('delete', () => {
     // arrange
     let rdClient = new Client(options);
     let endpoint = chance.string();
-    let spy = jest.spyOn(rdClient, '_fetch').mockResolvedValue(createFetchMock());
+    let spy = jest.spyOn(global, 'fetch').mockResolvedValue(createFetchMock());
 
     // act
     let response = await rdClient.delete(endpoint);
@@ -305,13 +284,14 @@ describe('login', () => {
     let rdClient = new Client(options);
     let username = chance.string();
     let password = chance.string();
-    let spy = jest.spyOn(rdClient, '_fetch').mockResolvedValue(createFetchMock(false));
+    let spy = jest.spyOn(global, 'fetch').mockResolvedValue(createFetchMock({ ok: false }));
 
     // act
     let response = await rdClient.login(username, password);
 
     // assert
     expect(spy.mock.calls.length).toBe(1);
+    expect(response.ok).toBe(false);
   });
 
   test('when login calls post authToken should be set to returned token', async () => {
@@ -328,9 +308,11 @@ describe('login', () => {
     let rdClient = new Client(options);
     let username = chance.string();
     let password = chance.string();
-    let spyPost = jest
-      .spyOn(rdClient, 'post')
-      .mockReturnValue(Promise.resolve({ token: expectedToken }));
+    let spyPost = jest.spyOn(global, 'fetch').mockReturnValue(
+      createFetchMock({
+        text: expectedToken
+      })
+    );
 
     // act
     let response = await rdClient.login(username, password);
@@ -338,6 +320,7 @@ describe('login', () => {
     // assert
     expect(spyPost).toHaveBeenCalledTimes(1);
     expect(options.authToken).toEqual(expectedToken);
+    expect(response.ok).toBe(true);
   });
 });
 
@@ -354,7 +337,7 @@ describe('logout', () => {
 
     // arrange
     let rdClient = new Client(options);
-    let spy = jest.spyOn(rdClient, '_fetch').mockResolvedValue(createFetchMock());
+    let spy = jest.spyOn(global, 'fetch').mockResolvedValue(createFetchMock());
 
     // act
     let response = await rdClient.logout();
@@ -377,7 +360,7 @@ describe('logout', () => {
 
     // arrange
     let rdClient = new Client(options);
-    let spyPost = jest.spyOn(rdClient, 'post').mockReturnValue(Promise.resolve({}));
+    let spyPost = jest.spyOn(global, 'fetch').mockReturnValue(createFetchMock());
 
     // act
     let response = await rdClient.logout();
