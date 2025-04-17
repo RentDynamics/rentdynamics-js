@@ -1,19 +1,18 @@
 import { Client, ClientOptions, ClientHelpers, BASE_URL } from './index';
 import Chance from 'chance';
 
-const createFetchMock = (overrides: Record<string, any> = {}) => {
+const createFetchMock = (overrides: Record<string, unknown> = {}) => {
   const opts = {
     ok: true,
     json: '',
     text: '',
     ...overrides
   };
-  const m = {
+  return Promise.resolve({
     ok: opts.ok,
     json: () => Promise.resolve(opts.json),
     text: () => Promise.resolve(opts.text)
-  };
-  return Promise.resolve(m);
+  });
 };
 
 describe('get', () => {
@@ -36,6 +35,7 @@ describe('get', () => {
 
     // assert
     expect(spy.mock.calls.length).toBe(1);
+    expect(response.ok).toBe(false);
   });
 
   test('get calls fetch with method GET - success', async () => {
@@ -53,10 +53,11 @@ describe('get', () => {
     const spy = jest.spyOn(global, 'fetch').mockResolvedValue(createFetchMock());
 
     // act
-    await rdClient.get(endpoint);
+    const response = await rdClient.get(endpoint);
 
     // assert
     expect(spy.mock.calls.length).toBe(1);
+    expect(response.ok).toBe(true);
   });
 
   test('get with parameters calls fetch with method GET - success', async () => {
@@ -74,11 +75,12 @@ describe('get', () => {
     const spy = jest.spyOn(global, 'fetch').mockResolvedValue(createFetchMock());
 
     // act
-    await rdClient.get(endpoint);
+    const response = await rdClient.get(endpoint);
 
     // assert
     expect(spy.mock.calls.length).toBe(1);
     expect(spy.mock.calls[0][0]).toEqual(`https://api.rentdynamics.dev${endpoint}`);
+    expect(response.ok).toBe(true);
   });
 });
 
@@ -103,6 +105,7 @@ describe('put', () => {
 
     // assert
     expect(spy.mock.calls.length).toBe(1);
+    expect(response.ok).toBe(false);
   });
 
   test('put calls fetch with method PUT - success', async () => {
@@ -118,13 +121,14 @@ describe('put', () => {
     const rdClient = new Client(options);
     const payload = {};
     const endpoint = chance.string();
-    const spy = jest.spyOn(global, 'fetch').mockResolvedValue(createFetchMock({ ok: false }));
+    const spy = jest.spyOn(global, 'fetch').mockResolvedValue(createFetchMock());
 
     // act
     const response = await rdClient.put(endpoint, payload);
 
     // assert
     expect(spy.mock.calls.length).toBe(1);
+    expect(response.ok).toBe(true);
   });
 });
 
@@ -149,6 +153,7 @@ describe('post', () => {
 
     // assert
     expect(spy.mock.calls.length).toBe(1);
+    expect(response.ok).toBe(false);
   });
 
   test('post calls fetch with method POST - success', async () => {
@@ -171,6 +176,7 @@ describe('post', () => {
 
     // assert
     expect(spy.mock.calls.length).toBe(1);
+    expect(response.ok).toBe(true);
   });
 });
 
@@ -194,6 +200,7 @@ describe('delete', () => {
 
     // assert
     expect(spy.mock.calls.length).toBe(1);
+    expect(response.ok).toBe(false);
   });
 
   test('delete calls fetch with method DELETE - success', async () => {
@@ -215,6 +222,7 @@ describe('delete', () => {
 
     // assert
     expect(spy.mock.calls.length).toBe(1);
+    expect(response.ok).toBe(true);
   });
 });
 
@@ -293,6 +301,7 @@ describe('logout', () => {
     // assert
     expect(spy).toHaveBeenCalled();
     expect(spy.mock.calls.length).toBe(1);
+    expect(response.ok).toBe(true);
   });
 
   test('when logout calls post authToken should be set to undefined', async () => {
@@ -316,6 +325,27 @@ describe('logout', () => {
     // assert
     expect(spyPost).toHaveBeenCalledTimes(1);
     expect(options.authToken).toEqual(expectedToken);
+    expect(response.ok).toBe(true);
+  });
+
+  test('when logout fails the auth token should not be cleared', async () => {
+    // arrange
+    const chance = new Chance();
+    const options = new ClientOptions();
+    const token = chance.apple_token();
+    options.apiKey = chance.string();
+    options.apiSecretKey = chance.string();
+    options.authToken = token;
+    const rdClient = new Client(options);
+    const spyPost = jest.spyOn(global, 'fetch').mockReturnValue(createFetchMock({ ok: false }));
+
+    // act
+    const response = await rdClient.logout();
+
+    // assert
+    expect(spyPost).toHaveBeenCalledTimes(1);
+    expect(options.authToken).toEqual(token);
+    expect(response.ok).toBe(false);
   });
 });
 
@@ -435,7 +465,7 @@ describe('getNonce', () => {
     clientHelpers = new ClientHelpers(options);
   });
 
-  const getFormattedPayloadFor = (payload: Record<string, any>) =>
+  const getFormattedPayloadFor = (payload: Record<string, unknown>) =>
     JSON.stringify(clientHelpers.formatPayload(payload));
 
   test('should handle arrays of primitive values', async () => {
@@ -501,7 +531,7 @@ describe('getNonce', () => {
 });
 
 describe('getHeaders', () => {
-  test('should return authorization header if there is an authToken', () => {
+  test('should return authorization header if there is an authToken', async () => {
     // arrange
     const chance = new Chance();
     const url = '/someUrlolz';
@@ -512,13 +542,13 @@ describe('getHeaders', () => {
     const clientHelpers = new ClientHelpers(options);
 
     // act
-    const result = clientHelpers.getHeaders(url);
+    const result = await clientHelpers.getHeaders(url);
 
     // assert
     expect(result['Authorization']).toBeDefined();
   });
 
-  test('should not return authorization header if there isnt an authToken', () => {
+  test(`should not return authorization header if there isn't an authToken`, async () => {
     // arrange
     const chance = new Chance();
     const url = '/someUrlolz';
@@ -529,12 +559,12 @@ describe('getHeaders', () => {
     const clientHelpers = new ClientHelpers(options);
 
     // act
-    const result = clientHelpers.getHeaders(url);
+    const result = await clientHelpers.getHeaders(url);
     // assert
     expect(result['Authorization']).toBeUndefined();
   });
 
-  test('should return x-rd-api-key header', () => {
+  test('should return x-rd-api-key header', async () => {
     // arrange
     const chance = new Chance();
     const url = '/someUrlolz';
@@ -544,13 +574,13 @@ describe('getHeaders', () => {
     const clientHelpers = new ClientHelpers(options);
 
     // act
-    const result = clientHelpers.getHeaders(url);
+    const result = await clientHelpers.getHeaders(url);
 
     // assert
     expect(result['x-rd-api-key']).toBeDefined();
   });
 
-  test('should return x-rd-api-nonce header', () => {
+  test('should return x-rd-api-nonce header', async () => {
     // arrange
     const chance = new Chance();
     const url = '/someUrlolz';
@@ -561,13 +591,13 @@ describe('getHeaders', () => {
     const clientHelpers = new ClientHelpers(options);
 
     // act
-    const result = clientHelpers.getHeaders(url, payload);
+    const result = await clientHelpers.getHeaders(url, payload);
 
     // assert
     expect(result['x-rd-api-nonce']).toBeDefined();
   });
 
-  test('should return x-rd-timestamp header', () => {
+  test('should return x-rd-timestamp header', async () => {
     // arrange
     const chance = new Chance();
     const url = '/someUrlolz';
@@ -577,13 +607,13 @@ describe('getHeaders', () => {
     const clientHelpers = new ClientHelpers(options);
 
     // act
-    const result = clientHelpers.getHeaders(url);
+    const result = await clientHelpers.getHeaders(url);
 
     // assert
     expect(result['x-rd-timestamp']).toBeDefined();
   });
 
-  test('should return Content-Type header', () => {
+  test('should return Content-Type header', async () => {
     // arrange
     const chance = new Chance();
     const url = '/someUrlolz';
@@ -593,14 +623,14 @@ describe('getHeaders', () => {
     const clientHelpers = new ClientHelpers(options);
 
     // act
-    const result = clientHelpers.getHeaders(url);
+    const result = await clientHelpers.getHeaders(url);
 
     // assert
     expect(result['Content-Type']).toBeDefined();
     expect(result['Content-Type']).toEqual('application/json');
   });
 
-  test('should return empty headers if missing apiKey and apiSecretKey', () => {
+  test('should return empty headers if missing apiKey and apiSecretKey', async () => {
     // arrange
     const url = '/someUrlolz';
     const options = new ClientOptions();
@@ -609,7 +639,7 @@ describe('getHeaders', () => {
     const clientHelpers = new ClientHelpers(options);
 
     // act
-    const result = clientHelpers.getHeaders(url);
+    const result = await clientHelpers.getHeaders(url);
 
     // assert
     expect(result['Authorization']).toEqual(undefined);
