@@ -4,8 +4,8 @@ import Chance from 'chance';
 const createFetchMock = (overrides: Record<string, unknown> = {}) => {
   const opts = {
     ok: true,
-    json: '',
-    text: '',
+    json: {},
+    text: '{}',
     ...overrides
   };
   return Promise.resolve({
@@ -126,7 +126,7 @@ describe('login', () => {
     const password = chance.string();
     const spyPost = jest.spyOn(global, 'fetch').mockReturnValue(
       createFetchMock({
-        text: expectedToken
+        json: { token: expectedToken }
       })
     );
     expect(client.helpers.authToken).toBeUndefined();
@@ -146,7 +146,7 @@ describe('login', () => {
     const password = chance.string();
     const spyPost = jest.spyOn(global, 'fetch').mockReturnValue(
       createFetchMock({
-        text: chance.apple_token()
+        json: { token: chance.apple_token() }
       })
     );
 

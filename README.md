@@ -1,149 +1,79 @@
 # Rent Dynamics JS
 
-[![Circle CI Badge][circleci-badge]][circleci-link]
-[![codecov][codecov-image]][codecov-link]
-[![Dependency Status][dependency-image]][dependency-link]
-[![Dev Dependency Status][dev-dependency-image]][dev-dependency-link]
-[![Peer Dependency Status][peer-dependency-image]][peer-dependency-link]
 [![NPM Version][npm-version-image]][npm-version-link]
 [![MIT License][npm-license-image]][npm-license-link]
 
+A utility for making requests to the Rent Dynamics API from a JavaScript environment.
+
+## Requirements
+
+Due to usage of the [Web Crypto API](https://developer.mozilla.org/en-US/docs/Web/API/Web_Crypto_API)
+a secure context is required for use in a browser environment. Read more about secure contexts
+[here](https://developer.mozilla.org/en-US/docs/Web/Security/Secure_Contexts).
+
+Due to usage of [node fetch](https://nodejs.org/docs/latest-v18.x/api/globals.html#fetch), node
+v18.20.x or greater is recommended in a node environment.
+
 ## CDN
 
-Include jsSHA and our CDN
+Specify the version you want to target.
 
 ```html
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jsSHA/2.3.1/sha.js"></script>
-<script src="https://cdnjs.rentdynamics.com/rentdynamics.latest.js"></script>
-```
+<script src="https://cdnjs.rentdynamics.com/rentdynamics.1.0.0.js"></script>
+<script>
+  const options = new RentDynamics.ClientOptions();
+  options.baseUrl = RentDynamics.BASE_URL.DEV_RD;
+  options.apiKey = '<insert-key-here>';
+  options.apiSecretKey = '<insert-secret-key-here>';
 
-```js
-var options = {
-  apiKey: '<insert-key-here>',
-  apiSecretKey: '<insert-secret-key-here>'
-};
-var rdClient = new RentDynamics.Client(options);
-rdClient.login('<username>', '<password>').then(function(result) {
-  ...
-});
-// Then you can make api calls
-rdClient.get('/data').then(function(result) {
-  ...
-});
+  const rdClient = new RentDynamics.Client(options);
+  rdClient.login('<username>', '<password>').then(() => {
+    rdClient.get('/datas').then(result => {});
+  });
+</script>
 ```
 
 ## NPM
 
-Install with [npm](https://www.npmjs.com/): `npm install rentdynamics`
+Install with [npm](https://www.npmjs.com/package/rentdynamics): `npm install rentdynamics`
 
-```ts
-import { Client } from 'rentdynamics';
+```js
+import { Client, ClientOptions, BASE_URL } from 'rentdynamics';
 
-let options = {
-  apiKey: '<insert-key-here>',
-  apiSecretKey: '<insert-secret-key-here>'
-};
-let rdClient = new Client(options);
-rdClient.login('<username>', '<password>').then((result: object) => {
-  ...
-});
-// Then you can make api calls
-rdClient.get('/data').then((result: array | object) => {
-  ...
-});
+const options = new ClientOptions();
+options.baseUrl = BASE_URL.DEV_RD;
+options.apiKey = '<insert-key-here>';
+options.apiSecretKey = '<insert-secret-key-here>';
+
+const rdClient = new Client(options);
+await rdClient.login('<username>', '<password>');
+const result = await rdClient.get('/datas');
 ```
 
-## Values
+## Details
 
-### ClientOptions
+### `BASE_URL` enum
 
-- `apiKey: string (default is undefined)`
-- `apiSecretKey: string (default is undefined)`
-- `authToken: string (default is undefined)`
-- `development: boolean (default is false)`
-- `service: string (default is undefined)`
-- `developmentUrl: string (default is undefined) (This will only be used if development is set to true)`
-- `baseUrl: string (default is undefined) (This will only be used if development is set to false)`
+Contains urls for the development and production services. This enum is meant to be passed to
+`ClientOptions` `baseUrl` property.
 
-### Client (requires a ClientOptions to be passed in)
+### `ClientOptions` class
 
-- `get(endpoint: string): Promise<any>`
-- `put(endpoint: string, payload: object): Promise<any>`
-- `post(endpoint: string, payload: object): Promise<any>`
-- `delete(endpoint: string): Promise<any>`
-- `login(username: string, password: string): Promise<any>`
-- `logout(): Promise<any>`
+Configuration for the `Client` and `ClientHelpers` class. The `ClientOptions` can be used to control
+what service and api keys are used. By default, the class will not specify any api keys or auth
+headers, and the `baseUrl` will be for the development Rent Dynamics API.
 
-### Available Endpoints
+### `Client` class
 
-- appointmentTimes for a given community group
+`Client` is a wrapper around the browser or node `fetch` API. `Client` is a simple utility for
+performing `get`, `put`, `post`, and `delete` methods. `Client` is capable of controlling whether or
+not requests are authenticated by calling `login` and `logout`.
 
-#### Examples
+### `ClientHelpers` class
 
-There are 4 different ways to format the response.
+`ClientHelpers` is consumed by `Client`. `ClientHelpers` can be used on it's own to make a custom
+client for more complex use cases.
 
-1.  only the time, no date (this is the default when the 'dateFormat' argument is omitted)
-
-```javascript
-rdClient
-  .get(`/appointmentTimes/${communityGroupId}?appointmentDate=10/31/2019&dateFormat=timeonly`)
-  .then(function (result) {
-    // result is a list of local appointmentTimes
-    // Example: ["10:00 AM","10:15 AM",...,"05:15 PM","05:30 PM"]
-  });
-```
-
-2.  utc
-
-```javascript
-rdClient
-  .get(`/appointmentTimes/${communityGroupId}?appointmentDate=10/31/2019&dateFormat=utc`)
-  .then(function (result) {
-    // result is a list of appointmentTimes in utc
-    // Example: ["2020-01-05T17:00:00Z","2020-01-05T17:15:00Z",...,"2020-01-06T00:15:00Z","2020-01-06T05:30:00Z"]
-  });
-```
-
-3.  the local time of the property without an offset
-
-```javascript
-rdClient
-  .get(
-    `/appointmentTimes/${communityGroupId}?appointmentDate=10/31/2019&dateFormat=localWithoutOffset`
-  )
-  .then(function (result) {
-    // result is a list of appointment dates & times in local time without any offset information
-    // Example: ["2020-01-05T10:00:00","2020-01-05T10:15:00",...,"2020-01-05T17:15:00","2020-01-05T17:30:00"]
-  });
-```
-
-4.  the local time of the property with an offset
-
-```javascript
-rdClient
-  .get(
-    `/appointmentTimes/${communityGroupId}?appointmentDate=10/31/2019&dateFormat=localWithOffset`
-  )
-  .then(function (result) {
-    // result is a list of appointment dates & times in local time with the timezone offset of the property
-    // Example: ["2020-01-05T10:00:00-0700","2020-01-05T10:15:00-0700",...,"2020-01-05T17:15:00-0700","2020-01-05T17:30:00-0700"]
-  });
-```
-
-## Testing
-
-- `npm test` > Runs all the tests and checks the code coverage.
-
-[circleci-badge]: https://circleci.com/gh/RentDynamics/rentdynamics-js/tree/master.svg?style=shield&circle-token=8ca42b3ae23f8df7f754457b3daae599f716f85c
-[circleci-link]: https://circleci.com/gh/RentDynamics/rentdynamics-js
-[codecov-image]: https://codecov.io/gh/RentDynamics/rentdynamics-js/branch/master/graph/badge.svg
-[codecov-link]: https://codecov.io/gh/RentDynamics/rentdynamics-js
-[dependency-image]: https://david-dm.org/RentDynamics/rentdynamics-js/status.svg
-[dependency-link]: https://david-dm.org/RentDynamics/rentdynamics-js
-[dev-dependency-image]: https://david-dm.org/RentDynamics/rentdynamics-js/dev-status.svg
-[dev-dependency-link]: https://david-dm.org/RentDynamics/rentdynamics-js?type=dev
-[peer-dependency-image]: https://david-dm.org/RentDynamics/rentdynamics-js/peer-status.svg
-[peer-dependency-link]: https://david-dm.org/RentDynamics/rentdynamics-js?type=peer
 [npm-version-image]: https://img.shields.io/npm/v/rentdynamics.svg
 [npm-version-link]: https://www.npmjs.com/package/rentdynamics
 [npm-license-image]: https://img.shields.io/npm/l/rentdynamics.svg

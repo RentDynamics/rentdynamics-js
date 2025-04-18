@@ -1,3 +1,13 @@
+/* istanbul ignore next */
+if (typeof window === 'undefined') {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const util = require('util');
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const crypto = require('crypto');
+  global.TextEncoder = util.TextEncoder;
+  global.crypto = crypto;
+}
+
 /** Payload is known as the "body" of a Request. The payload must be JSON serializable. */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Payload = any;
@@ -85,7 +95,8 @@ export class Client {
     if (!result.ok) {
       return result;
     }
-    this.helpers.authToken = await result.text();
+    const { token } = await result.json();
+    this.helpers.authToken = token;
     return result;
   }
 
@@ -102,7 +113,7 @@ export class Client {
 }
 
 /** BASE_URL is a collection of base urls for each dev/prod Rent Dynamics service. */
-export const enum BASE_URL {
+export enum BASE_URL {
   DEV_RD = 'https://api.rentdynamics.dev',
   PROD_RD = 'https://api.rentdynamics.com',
   DEV_RP = 'https://api-dev.rentplus.com',
