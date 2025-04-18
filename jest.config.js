@@ -10,7 +10,7 @@ module.exports = {
       statements: 100
     }
   },
-  coveragePathIgnorePatterns: ['<rootDir>/jest-node.setup.js', '<rootDir>/jest-jsdom.setup.js'],
+  coveragePathIgnorePatterns: ['<rootDir>/jest-node.setup.ts', '<rootDir>/jest-jsdom.setup.ts'],
   globals: {
     'ts-jest': {
       tsConfig: 'tsconfig.json'
@@ -22,7 +22,7 @@ module.exports = {
     '^.+\\.(ts|tsx)$': 'ts-jest'
   },
   setupFiles: process.env.DOM
-    ? ['<rootDir>/jest-jsdom.setup.js']
-    : ['<rootDir>/jest-node.setup.js'],
+    ? ['<rootDir>/jest-jsdom.setup.ts']
+    : ['<rootDir>/jest-node.setup.ts'],
   testEnvironment: process.env.DOM ? 'jsdom' : 'node'
 };
