@@ -73,7 +73,6 @@ jobs:
           name: Publish package to dev cdn
           command: |
             aws s3 cp ./dist/rentdynamics.$(jq .version package.json -r).js s3://$CDNJS_DEV_BUCKET_NAME
-            aws s3 cp ./dist/rentdynamics.latest.js s3://$CDNJS_DEV_BUCKET_NAME
             aws cloudfront create-invalidation --distribution-id $CDNJS_DEV_DISTRIBUTION_ID --paths '/*'
 
   publish-cdn-prod:
@@ -86,7 +85,6 @@ jobs:
           name: Publish package to cdn
           command: |
             aws s3 cp ./dist/rentdynamics.$(jq .version package.json -r).js s3://$CDNJS_BUCKET_NAME
-            aws s3 cp ./dist/rentdynamics.latest.js s3://$CDNJS_BUCKET_NAME
             aws cloudfront create-invalidation --distribution-id $CDNJS_DISTRIBUTION_ID --paths '/*'
 
 workflows:

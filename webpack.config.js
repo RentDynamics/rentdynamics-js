@@ -3,8 +3,7 @@ const path = require('path');
 
 module.exports = {
   entry: {
-    [PACKAGE.version]: './dist/index.js',
-    latest: './dist/index.js'
+    [PACKAGE.version]: './dist/index.js'
   },
   output: {
     filename: 'rentdynamics.[name].js',
