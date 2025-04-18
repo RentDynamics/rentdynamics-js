@@ -153,6 +153,27 @@ export class ClientHelpers {
     this.options.authToken = t;
   }
 
+  /** getHeaders creates headers for the given params. */
+  public async getHeaders(endpoint: string, payload?: Payload) {
+    const headers: Record<string, string> = {};
+    if (this.options.apiKey && this.options.apiSecretKey) {
+      if (typeof payload !== 'undefined') {
+        payload = this.formatPayload(payload);
+      }
+      const timestamp = Date.now();
+      const nonce = await this.getNonce(timestamp, endpoint, JSON.stringify(payload));
+      if (this.options.authToken) {
+        headers.Authorization = 'TOKEN ' + this.options.authToken;
+      }
+      headers['x-rd-api-key'] = this.options.apiKey;
+      headers['x-rd-api-nonce'] = nonce;
+      headers['x-rd-timestamp'] = timestamp.toString();
+      headers['Content-Type'] = 'application/json';
+      return headers;
+    }
+    return headers;
+  }
+
   /** formatPayload formats the payload for nonce calculation. */
   public formatPayload(payload: Payload): Payload {
     let formattedPayload: Payload = {};
@@ -179,27 +200,6 @@ export class ClientHelpers {
         });
     }
     return formattedPayload;
-  }
-
-  /** getHeaders creates headers for the given params. */
-  public async getHeaders(endpoint: string, payload?: Payload) {
-    const headers: Record<string, string> = {};
-    if (this.options.apiKey && this.options.apiSecretKey) {
-      if (typeof payload !== 'undefined') {
-        payload = this.formatPayload(payload);
-      }
-      const timestamp = Date.now();
-      const nonce = await this.getNonce(timestamp, endpoint, JSON.stringify(payload));
-      if (this.options.authToken) {
-        headers.Authorization = 'TOKEN ' + this.options.authToken;
-      }
-      headers['x-rd-api-key'] = this.options.apiKey;
-      headers['x-rd-api-nonce'] = nonce;
-      headers['x-rd-timestamp'] = timestamp.toString();
-      headers['Content-Type'] = 'application/json';
-      return headers;
-    }
-    return headers;
   }
 
   /** getNonce calculates the nonce for the given params. */
