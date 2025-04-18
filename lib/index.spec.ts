@@ -36,10 +36,10 @@ const createRandomClient = () => {
 };
 
 describe('get', () => {
-  test('calls fetch fail', async () => {
+  test.each([true, false])('calls fetch with ok response of %p', async v => {
     // arrange
     const endpoint = chance.string();
-    const spy = jest.spyOn(global, 'fetch').mockResolvedValue(createFetchMock({ ok: false }));
+    const spy = jest.spyOn(global, 'fetch').mockResolvedValue(createFetchMock({ ok: v }));
 
     // act
     const response = await createRandomClient().get(endpoint);
@@ -47,124 +47,74 @@ describe('get', () => {
     // assert
     expect(spy.mock.calls.length).toBe(1);
     expect(spy.mock.calls[0][0]).toEqual(`https://api.rentdynamics.dev${endpoint}`);
-    expect(response.ok).toBe(false);
-  });
-
-  test('calls fetch ok', async () => {
-    // arrange
-    const endpoint = chance.string();
-    const spy = jest.spyOn(global, 'fetch').mockResolvedValue(createFetchMock());
-
-    // act
-    const response = await createRandomClient().get(endpoint);
-
-    // assert
-    expect(spy.mock.calls.length).toBe(1);
-    expect(spy.mock.calls[0][0]).toEqual(`https://api.rentdynamics.dev${endpoint}`);
-    expect(response.ok).toBe(true);
+    expect(response.ok).toBe(v);
   });
 });
 
 describe('put', () => {
-  test('calls fetch fail', async () => {
+  test.each([true, false])('calls fetch with ok response of %p', async v => {
     // arrange
     const payload = {};
     const endpoint = chance.string();
-    const spy = jest.spyOn(global, 'fetch').mockResolvedValue(createFetchMock({ ok: false }));
+    const spy = jest.spyOn(global, 'fetch').mockResolvedValue(createFetchMock({ ok: v }));
 
     // act
     const response = await createRandomClient().put(endpoint, payload);
 
     // assert
     expect(spy.mock.calls.length).toBe(1);
-    expect(response.ok).toBe(false);
-  });
-
-  test('calls fetch ok', async () => {
-    // arrange
-    const payload = {};
-    const endpoint = chance.string();
-    const spy = jest.spyOn(global, 'fetch').mockResolvedValue(createFetchMock());
-
-    // act
-    const response = await createRandomClient().put(endpoint, payload);
-
-    // assert
-    expect(spy.mock.calls.length).toBe(1);
-    expect(response.ok).toBe(true);
+    expect(spy.mock.calls[0][0]).toEqual(`https://api.rentdynamics.dev${endpoint}`);
+    expect(response.ok).toBe(v);
   });
 });
 
 describe('post', () => {
-  test('calls fetch fail', async () => {
+  test.each([true, false])('calls fetch with ok response of %p', async v => {
     // arrange
     const payload = {};
     const endpoint = chance.string();
-    const spy = jest.spyOn(global, 'fetch').mockResolvedValue(createFetchMock({ ok: false }));
+    const spy = jest.spyOn(global, 'fetch').mockResolvedValue(createFetchMock({ ok: v }));
 
     // act
     const response = await createRandomClient().post(endpoint, payload);
 
     // assert
     expect(spy.mock.calls.length).toBe(1);
-    expect(response.ok).toBe(false);
-  });
-
-  test('calls fetch ok', async () => {
-    // arrange
-    const payload = {};
-    const endpoint = chance.string();
-    const spy = jest.spyOn(global, 'fetch').mockResolvedValue(createFetchMock());
-
-    // act
-    const response = await createRandomClient().post(endpoint, payload);
-
-    // assert
-    expect(spy.mock.calls.length).toBe(1);
-    expect(response.ok).toBe(true);
+    expect(spy.mock.calls[0][0]).toEqual(`https://api.rentdynamics.dev${endpoint}`);
+    expect(response.ok).toBe(v);
   });
 });
 
 describe('delete', () => {
-  test('calls fetch fail', async () => {
+  test.each([true, false])('calls fetch with ok response of %p', async v => {
     // arrange
     const endpoint = chance.string();
-    const spy = jest.spyOn(global, 'fetch').mockResolvedValue(createFetchMock({ ok: false }));
+    const spy = jest.spyOn(global, 'fetch').mockResolvedValue(createFetchMock({ ok: v }));
 
     // act
     const response = await createRandomClient().delete(endpoint);
 
     // assert
     expect(spy.mock.calls.length).toBe(1);
-    expect(response.ok).toBe(false);
-  });
-
-  test('calls fetch ok', async () => {
-    // arrange
-    const endpoint = chance.string();
-    const spy = jest.spyOn(global, 'fetch').mockResolvedValue(createFetchMock());
-
-    // act
-    const response = await createRandomClient().delete(endpoint);
-
-    // assert
-    expect(spy.mock.calls.length).toBe(1);
-    expect(response.ok).toBe(true);
+    expect(spy.mock.calls[0][0]).toEqual(`https://api.rentdynamics.dev${endpoint}`);
+    expect(response.ok).toBe(v);
   });
 });
 
 describe('login', () => {
-  test('calls', async () => {
+  test('on failure does not set auth token', async () => {
     // arrange
     const username = chance.string();
     const password = chance.string();
     const spy = jest.spyOn(global, 'fetch').mockResolvedValue(createFetchMock({ ok: false }));
+    const client = createRandomClient();
 
     // act
-    const response = await createRandomClient().login(username, password);
+    const response = await client.login(username, password);
 
     // assert
     expect(spy.mock.calls.length).toBe(1);
+    expect(client.helpers.authToken).toBeUndefined();
     expect(response.ok).toBe(false);
   });
 
@@ -189,25 +139,29 @@ describe('login', () => {
     expect(response.ok).toBe(true);
     expect(client.helpers.authToken).toEqual(expectedToken);
   });
+
+  test('sends username and encrypted password', async () => {
+    // arrange
+    const username = chance.string();
+    const password = chance.string();
+    const spyPost = jest.spyOn(global, 'fetch').mockReturnValue(
+      createFetchMock({
+        text: chance.apple_token()
+      })
+    );
+
+    // act
+    await createRandomClient().login(username, password);
+
+    // assert
+    expect(spyPost).toHaveBeenCalledTimes(1);
+    const sentBody = JSON.parse(spyPost.mock.calls[0][1].body);
+    expect(sentBody.username).toBe(username);
+    expect(sentBody.password).not.toBe(password);
+  });
 });
 
 describe('logout', () => {
-  test('calls', async () => {
-    // arrange
-    const options = createRandomOptions();
-    options.authToken = chance.string();
-    const rdClient = new Client(options);
-    const spy = jest.spyOn(global, 'fetch').mockResolvedValue(createFetchMock());
-
-    // act
-    const response = await rdClient.logout();
-
-    // assert
-    expect(spy).toHaveBeenCalled();
-    expect(spy.mock.calls.length).toBe(1);
-    expect(response.ok).toBe(true);
-  });
-
   test('on success clears auth token', async () => {
     // arrange
     const options = createRandomOptions();
@@ -241,6 +195,23 @@ describe('logout', () => {
     expect(spyPost).toHaveBeenCalledTimes(1);
     expect(response.ok).toBe(false);
     expect(options.authToken).toEqual(token);
+  });
+
+  test('sends auth token', async () => {
+    // arrange
+    const options = createRandomOptions();
+    const token = chance.apple_token();
+    options.authToken = token;
+    const rdClient = new Client(options);
+    const spyPost = jest.spyOn(global, 'fetch').mockReturnValue(createFetchMock());
+
+    // act
+    await rdClient.logout();
+
+    // assert
+    expect(spyPost).toHaveBeenCalledTimes(1);
+    const sentBody = JSON.parse(spyPost.mock.calls[0][1].body);
+    expect(sentBody.authToken).toBe(token);
   });
 });
 
@@ -338,22 +309,39 @@ describe('getNonce', () => {
   const getFormattedPayloadFor = (payload: Record<string, unknown>) =>
     JSON.stringify(clientHelpers.formatPayload(payload));
 
-  test('should handle arrays of primitive values', async () => {
+  test.each([
+    [
+      'with array of primitive values',
+      { orange: 5, blue: [1, 5, 2] },
+      '0da0f05839bef83df7382f9d936c236418f7bb3c'
+    ],
+    [
+      'should return hash of timestamp, url, payload and secret key',
+      {
+        orange: 1,
+        blue: {
+          red: 'a  f  g',
+          pink: 'b  t  g'
+        }
+      },
+      '608e3b1b7fc9f68b226275d8125554adf1f44086'
+    ]
+  ])('%s', async (_, unformattedPayload, expectedNonce) => {
     // arrange
-    const formattedPayload = getFormattedPayloadFor({
-      orange: 5,
-      blue: [1, 5, 2]
-    });
+    const formattedPayload = getFormattedPayloadFor(unformattedPayload);
 
     // act
     const result = await clientHelpers.getNonce(timestamp, testUrl, formattedPayload);
 
     // assert
-    expect(result).toEqual('0da0f05839bef83df7382f9d936c236418f7bb3c');
+    expect(result).toEqual(expectedNonce);
   });
 
-  test('should return hash of timestamp, url, payload and secret key', async () => {
+  test('returns empty string if missing apiSecretKey', async () => {
     // arrange
+    const o = new ClientOptions();
+    o.apiKey = 'nJYLab]!';
+    const c = new ClientHelpers(o);
     const formattedPayload = getFormattedPayloadFor({
       orange: 1,
       blue: {
@@ -363,40 +351,18 @@ describe('getNonce', () => {
     });
 
     // act
-    const result = await clientHelpers.getNonce(timestamp, testUrl, formattedPayload);
+    const result = await c.getNonce(timestamp, testUrl, formattedPayload);
 
     // assert
-    expect(result).toEqual('608e3b1b7fc9f68b226275d8125554adf1f44086');
+    expect(result).toEqual('');
   });
 
-  test('should return hash of timestamp, url and secret key if no payload exists', async () => {
+  test('when no payload is passed', async () => {
     // arrange / act
     const result = await clientHelpers.getNonce(timestamp, testUrl);
 
     // assert
     expect(result).toEqual('a724eb47b4fc644b2fe1fd5a0b778fc6cff1930c');
-  });
-
-  test('should return empty string if missing apiSecretKey', async () => {
-    // arrange
-    const o = new ClientOptions();
-    o.apiKey = 'nJYLab]!';
-    const c = new ClientHelpers(o);
-    const formattedPayload = c.formatPayload(
-      JSON.stringify({
-        orange: 1,
-        blue: {
-          red: 'a  f  g',
-          pink: 'b  t  g'
-        }
-      })
-    );
-
-    // act
-    const result = await c.getNonce(timestamp, testUrl, formattedPayload);
-
-    // assert
-    expect(result).toEqual('');
   });
 });
 
@@ -422,6 +388,7 @@ describe('getHeaders', () => {
 
     // act
     const result = await clientHelpers.getHeaders(testUrl);
+
     // assert
     expect(result.Authorization).toBeUndefined();
   });
