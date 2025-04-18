@@ -6,7 +6,7 @@ orbs:
 executors:
   node:
     docker:
-      - image: cimg/node:10.24.1
+      - image: cimg/node:18.20.5
     working_directory: ~/rentdynamics-js
 
 jobs:
@@ -30,6 +30,18 @@ jobs:
       - persist_to_workspace:
           root: ~/
           paths: [rentdynamics-js]
+
+  format:
+    executor: node
+    steps:
+      - attach_workspace:
+          at: ~/
+      - run:
+          name: Check format
+          command: npm run format:check
+      - run:
+          name: Lint
+          command: npm run lint
 
   test:
     executor: node
@@ -61,7 +73,6 @@ jobs:
           name: Publish package to dev cdn
           command: |
             aws s3 cp ./dist/rentdynamics.$(jq .version package.json -r).js s3://$CDNJS_DEV_BUCKET_NAME
-            aws s3 cp ./dist/rentdynamics.latest.js s3://$CDNJS_DEV_BUCKET_NAME
             aws cloudfront create-invalidation --distribution-id $CDNJS_DEV_DISTRIBUTION_ID --paths '/*'
 
   publish-cdn-prod:
@@ -74,7 +85,6 @@ jobs:
           name: Publish package to cdn
           command: |
             aws s3 cp ./dist/rentdynamics.$(jq .version package.json -r).js s3://$CDNJS_BUCKET_NAME
-            aws s3 cp ./dist/rentdynamics.latest.js s3://$CDNJS_BUCKET_NAME
             aws cloudfront create-invalidation --distribution-id $CDNJS_DISTRIBUTION_ID --paths '/*'
 
 workflows:
@@ -82,8 +92,11 @@ workflows:
     jobs:
       - prepare
 
-      - test:
+      - format:
           requires: [prepare]
+
+      - test:
+          requires: [format]
 
       - publish-npm:
           context:
