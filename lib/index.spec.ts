@@ -440,7 +440,7 @@ describe('getHeaders', () => {
     const result = await clientHelpers.getHeaders(testUrl);
 
     // assert
-    expect(result['Authorization']).toEqual(undefined);
+    expect(result.Authorization).toEqual(undefined);
     expect(result['x-rd-api-key']).toEqual(undefined);
     expect(result['x-rd-api-nonce']).toEqual(undefined);
     expect(result['x-rd-timestamp']).toEqual(undefined);

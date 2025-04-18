@@ -9,5 +9,11 @@ export default defineConfig([
     files: ['**/*.{js,mjs,cjs,ts}'],
     languageOptions: { globals: { ...globals.browser, ...globals.node } }
   },
-  tseslint.configs.recommended
+  tseslint.configs.recommended,
+  {
+    rules: {
+      eqeqeq: ['error', 'always', { null: 'ignore' }],
+      'dot-notation': 'error'
+    }
+  }
 ]);

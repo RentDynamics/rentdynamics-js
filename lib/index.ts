@@ -156,29 +156,27 @@ export class ClientHelpers {
   /** formatPayload formats the payload for nonce calculation. */
   public formatPayload(payload: Payload): Payload {
     let formattedPayload: Payload = {};
-
     if (payload === undefined || payload === null) {
       formattedPayload = null;
     } else if (payload !== Object(payload)) {
       formattedPayload = payload;
     } else if (Array.isArray(payload)) {
       formattedPayload = [];
-
-      for (let i = 0; i < payload.length; i++) {
-        formattedPayload[i] = this.formatPayload(payload[i]);
-      }
+      payload.forEach((_, index) => {
+        formattedPayload[index] = this.formatPayload(payload[index]);
+      });
     } else {
       Object.keys(payload)
         .sort()
         .forEach(k => {
-          if (typeof payload[k] == 'object') {
+          if (typeof payload[k] === 'object') {
             formattedPayload[k] = this.formatPayload(payload[k]);
-          } else if (typeof payload[k] == 'string') {
+          } else if (typeof payload[k] === 'string') {
             formattedPayload[k] = payload[k].replace(/ /g, '');
           } else {
             formattedPayload[k] = payload[k];
           }
-        }, this);
+        });
     }
     return formattedPayload;
   }
@@ -193,7 +191,7 @@ export class ClientHelpers {
       const timestamp = Date.now();
       const nonce = await this.getNonce(timestamp, endpoint, JSON.stringify(payload));
       if (this.options.authToken) {
-        headers['Authorization'] = 'TOKEN ' + this.options.authToken;
+        headers.Authorization = 'TOKEN ' + this.options.authToken;
       }
       headers['x-rd-api-key'] = this.options.apiKey;
       headers['x-rd-api-nonce'] = nonce;
