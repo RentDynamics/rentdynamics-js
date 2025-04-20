@@ -4,7 +4,7 @@ const path = require('path');
 module.exports = {
   mode: 'production',
   entry: {
-    [PACKAGE.version]: './dist/index.js'
+    [PACKAGE.version]: './dist/lib/index.js'
   },
   output: {
     filename: 'rentdynamics.[name].js',
