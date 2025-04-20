@@ -5,4 +5,5 @@ import crypto from 'crypto';
 global.TextEncoder = util.TextEncoder;
 // @ts-expect-error node crypto is not a exact match to browser crypto
 global.crypto = crypto;
+// @ts-expect-error mock
 global.fetch = jest.fn(() => {});

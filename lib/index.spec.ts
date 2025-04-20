@@ -12,7 +12,7 @@ const createFetchMock = (overrides: Record<string, unknown> = {}) => {
     ok: opts.ok,
     json: () => Promise.resolve(opts.json),
     text: () => Promise.resolve(opts.text)
-  });
+  } as Response);
 };
 
 const chance = new Chance();
@@ -155,7 +155,7 @@ describe('login', () => {
 
     // assert
     expect(spyPost).toHaveBeenCalledTimes(1);
-    const sentBody = JSON.parse(spyPost.mock.calls[0][1].body);
+    const sentBody = JSON.parse(spyPost.mock.calls[0][1]?.body as string);
     expect(sentBody.username).toBe(username);
     expect(sentBody.password).not.toBe(password);
   });
@@ -210,7 +210,7 @@ describe('logout', () => {
 
     // assert
     expect(spyPost).toHaveBeenCalledTimes(1);
-    const sentBody = JSON.parse(spyPost.mock.calls[0][1].body);
+    const sentBody = JSON.parse(spyPost.mock.calls[0][1]?.body as string);
     expect(sentBody.authToken).toBe(token);
   });
 });
