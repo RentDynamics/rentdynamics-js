@@ -9,6 +9,12 @@
 [![NPM Version][npm-version-image]][npm-version-link]
 [![MIT License][npm-license-image]][npm-license-link]
 
+## Table of Contents
+1. [CDN](#cdn)
+2. [NPM](#npm)
+3. [Values](#values)
+5. [Example Usage](#example-usage)
+
 
 ## CDN
 Include jsSHA and our CDN
@@ -105,6 +111,20 @@ rdClient.get(`/appointmentTimes/${communityGroupId}?appointmentDate=10/31/2019&d
   // result is a list of appointment dates & times in local time with the timezone offset of the property
   // Example: ["2020-01-05T10:00:00-0700","2020-01-05T10:15:00-0700",...,"2020-01-05T17:15:00-0700","2020-01-05T17:30:00-0700"]
 });
+```
+## Example Usage
+
+### Handling Responses
+When an error occurs during the request, the entire [Response](https://developer.mozilla.org/en-US/docs/Web/API/Response) of the [Fetch API](https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API) is returned. However, when a request is successful, the body of the response is returned.
+
+Below is an example of how to determine if you have received an error and how to access it:
+
+```javascript
+const result = await rdClient.get(URL);
+if (typeof result.json === 'function') {  
+  const error = await result.json();
+  throw new Error(error);
+}
 ```
 
 ## Testing
