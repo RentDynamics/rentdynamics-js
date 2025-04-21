@@ -19,17 +19,17 @@ v18.20.x or greater is recommended in a node environment.
 Specify the version you want to target.
 
 ```html
-<script src="https://cdnjs.rentdynamics.com/rentdynamics.1.0.0.js"></script>
+<script src="https://cdnjs.rentdynamics.com/rentdynamics.<your-version-here>.js"></script>
 <script>
-  const options = new RentDynamics.ClientOptions();
-  options.baseUrl = RentDynamics.BASE_URL.DEV_RD;
-  options.apiKey = '<insert-key-here>';
-  options.apiSecretKey = '<insert-secret-key-here>';
-
-  const rdClient = new RentDynamics.Client(options);
-  rdClient.login('<username>', '<password>').then(() => {
-    rdClient.get('/datas').then(result => {});
-  });
+  (async () => {
+    const options = new RentDynamics.ClientOptions();
+    options.baseUrl = RentDynamics.BASE_URL.DEV_RD;
+    options.apiKey = '<insert-key-here>';
+    options.apiSecretKey = '<insert-secret-key-here>';
+    const rdClient = new RentDynamics.Client(options);
+    await rdClient.login('<username', '<password>');
+    await rdClient.get('/datas');
+  })();
 </script>
 ```
 
@@ -38,18 +38,15 @@ Specify the version you want to target.
 Install with [npm](https://www.npmjs.com/package/rentdynamics): `npm install rentdynamics`
 
 ```js
-const { Client, ClientOptions, BASE_URL } = require('rentdynamics');
+import { Client, ClientOptions, BASE_URL } from 'rentdynamics';
 
-(async () => {
-  const options = new ClientOptions();
-  options.baseUrl = BASE_URL.DEV_RD;
-  options.apiKey = '<insert-key-here>';
-  options.apiSecretKey = '<insert-secret-key-here>';
-
-  const rdClient = new Client(options);
-  await rdClient.login('<username>', '<password>');
-  const result = await rdClient.get('/datas');
-})();
+const options = new ClientOptions();
+options.baseUrl = BASE_URL.DEV_RD;
+options.apiKey = '<insert-key-here>';
+options.apiSecretKey = '<insert-secret-key-here>';
+const rdClient = new Client(options);
+await rdClient.login('<username>', '<password>');
+const result = await rdClient.get('/datas');
 ```
 
 ## Details

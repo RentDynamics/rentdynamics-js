@@ -1,10 +1,13 @@
-var PACKAGE = require('./package.json');
-const path = require('path');
+import PACKAGE from './package.json' assert { type: 'json' };
+import { fileURLToPath } from 'url';
+import path from 'path';
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
-module.exports = {
+export default {
   mode: 'production',
   entry: {
-    [PACKAGE.version]: './dist/lib/index.js'
+    [PACKAGE.version]: './dist/index.js'
   },
   output: {
     filename: 'rentdynamics.[name].js',

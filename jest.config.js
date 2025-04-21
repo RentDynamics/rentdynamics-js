@@ -1,4 +1,5 @@
-module.exports = {
+const dom = process.env.DOM;
+export default {
   clearMocks: true,
   collectCoverage: true,
   coverageDirectory: 'coverage',
@@ -10,19 +11,12 @@ module.exports = {
       statements: 100
     }
   },
-  coveragePathIgnorePatterns: ['<rootDir>/jest-node.setup.ts', '<rootDir>/jest-jsdom.setup.ts'],
-  globals: {
-    'ts-jest': {
-      tsConfig: 'tsconfig.json'
-    }
-  },
+  coveragePathIgnorePatterns: ['<rootDir>/jest-node.setup.js', '<rootDir>/jest-jsdom.setup.js'],
   moduleFileExtensions: ['ts', 'tsx', 'js'],
   testMatch: ['**/*.spec.+(ts|tsx)'],
   transform: {
-    '^.+\\.(ts|tsx)$': 'ts-jest'
+    '^.+\\.(ts|tsx)$': ['ts-jest', { tsconfig: 'tsconfig.json', useESM: true }]
   },
-  setupFiles: process.env.DOM
-    ? ['<rootDir>/jest-jsdom.setup.ts']
-    : ['<rootDir>/jest-node.setup.ts'],
-  testEnvironment: process.env.DOM ? 'jsdom' : 'node'
+  setupFiles: dom ? ['<rootDir>/jest-jsdom.setup.js'] : ['<rootDir>/jest-node.setup.js'],
+  testEnvironment: dom ? 'jsdom' : 'node'
 };

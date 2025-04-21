@@ -1,13 +1,3 @@
-/* istanbul ignore next */
-if (typeof window === 'undefined') {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const util = require('util');
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const crypto = require('crypto');
-  global.TextEncoder = util.TextEncoder;
-  global.crypto = crypto;
-}
-
 /** Payload is known as the "body" of a Request. The payload must be JSON serializable. */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Payload = any;
@@ -221,19 +211,22 @@ export class ClientHelpers {
       typeof payloadStr !== 'undefined'
         ? timestamp + encodedUrl + payloadStr
         : timestamp + encodedUrl;
-    const encoder = new TextEncoder();
+    const encoder = await _getEncoder();
+    const cryptographer = await _getCryptographer();
     const key = encoder.encode(this.options.apiSecretKey);
     const data = encoder.encode(nonceStr);
     const algorithm = { name: 'HMAC', hash: 'SHA-1' };
-    const hmac = await crypto.subtle.importKey('raw', key, algorithm, false, ['sign']);
-    const signed = await crypto.subtle.sign(algorithm.name, hmac, data);
+    const hmac = await cryptographer.subtle.importKey('raw', key, algorithm, false, ['sign']);
+    const signed = await cryptographer.subtle.sign(algorithm.name, hmac, data);
     return _hexDigest(signed);
   }
 
   /** encryptPassword encrypts the password for login. */
   public async encryptPassword(password: string) {
-    const encodedPassword = new TextEncoder().encode(password);
-    const digestedPassword = await crypto.subtle.digest('SHA-1', encodedPassword);
+    const encoder = await _getEncoder();
+    const cryptographer = await _getCryptographer();
+    const encodedPassword = encoder.encode(password);
+    const digestedPassword = await cryptographer.subtle.digest('SHA-1', encodedPassword);
     return _hexDigest(digestedPassword);
   }
 }
@@ -242,3 +235,14 @@ const _hexDigest = (buf: ArrayBuffer): string =>
   Array.from(new Uint8Array(buf))
     .map(b => b.toString(16).padStart(2, '0'))
     .join('');
+
+/* istanbul ignore next */
+const _getEncoder = async () =>
+  _isNodeEnvironment() ? new (await import('util')).TextEncoder() : new TextEncoder();
+
+/* istanbul ignore next */
+const _getCryptographer = async () =>
+  _isNodeEnvironment() ? (await import('crypto')).webcrypto : crypto;
+
+/* istanbul ignore next */
+const _isNodeEnvironment = () => typeof window === 'undefined';
