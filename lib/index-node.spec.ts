@@ -3,7 +3,16 @@
  */
 // The tests in this file use node instead of jsdom.
 
-import { ClientHelpers, ClientOptions } from '.';
+import { ClientHelpers, ClientOptions } from './index';
+
+const createOptions = async () => {
+  const options = new ClientOptions();
+  options.apiKey = 'nJYLab]!';
+  options.apiSecretKey = 'ka4B#%NYx';
+  options.getEncoder = async () => new (await import('util')).TextEncoder();
+  options.getCryptographer = async () => (await import('crypto')).subtle;
+  return options;
+};
 
 describe('ClientHelpers node', () => {
   describe('getNonce', () => {
@@ -12,12 +21,8 @@ describe('ClientHelpers node', () => {
     let clientHelpers!: ClientHelpers;
 
     beforeEach(async () => {
-      const options = new ClientOptions();
-      options.apiKey = 'nJYLab]!';
-      options.apiSecretKey = 'ka4B#%NYx';
-      const nodeEncoder = new (await import('util')).TextEncoder();
-      const nodeCryptographer = await import('crypto');
-      clientHelpers = new ClientHelpers(options, nodeEncoder, nodeCryptographer.subtle);
+      const options = await createOptions();
+      clientHelpers = new ClientHelpers(options);
     });
 
     const getFormattedPayloadFor = (payload: Record<string, unknown>) =>
@@ -53,11 +58,9 @@ describe('ClientHelpers node', () => {
 
     test('returns empty string if missing apiSecretKey', async () => {
       // arrange
-      const o = new ClientOptions();
-      o.apiKey = 'nJYLab]!';
-      const nodeEncoder = new (await import('util')).TextEncoder();
-      const nodeCryptographer = await import('crypto');
-      const c = new ClientHelpers(o, nodeEncoder, nodeCryptographer.subtle);
+      const o = await createOptions();
+      o.apiSecretKey = undefined;
+      const c = new ClientHelpers(o);
       const formattedPayload = getFormattedPayloadFor({
         orange: 1,
         blue: {
@@ -79,6 +82,20 @@ describe('ClientHelpers node', () => {
 
       // assert
       expect(result).toEqual('a724eb47b4fc644b2fe1fd5a0b778fc6cff1930c');
+    });
+  });
+
+  describe('encryptPassword', () => {
+    test('encrypts', async () => {
+      // arrange
+      const options = await createOptions();
+      const clientHelpers = new ClientHelpers(options);
+
+      // act
+      const result = await clientHelpers.encryptPassword('#iL0v3Kitties');
+
+      // assert
+      expect(result).toBe('5edd56f2a05a89617f12550ef524370a229f93de');
     });
   });
 });

@@ -33,7 +33,7 @@ Specify the version you want to target.
 </script>
 ```
 
-## NPM
+## NPM (Browser)
 
 Install with [npm](https://www.npmjs.com/package/rentdynamics): `npm install rentdynamics`
 
@@ -44,6 +44,24 @@ const options = new ClientOptions();
 options.baseUrl = BASE_URL.DEV_RD;
 options.apiKey = '<insert-key-here>';
 options.apiSecretKey = '<insert-secret-key-here>';
+const rdClient = new Client(options);
+await rdClient.login('<username>', '<password>');
+const result = await rdClient.get('/datas');
+```
+
+## NPM (Node)
+
+Install with [npm](https://www.npmjs.com/package/rentdynamics): `npm install rentdynamics`
+
+```js
+import { Client, ClientOptions, BASE_URL } from 'rentdynamics';
+
+const options = new ClientOptions();
+options.baseUrl = BASE_URL.DEV_RD;
+options.apiKey = '<insert-key-here>';
+options.apiSecretKey = '<insert-secret-key-here>';
+options.getEncoder = async () => new (await import('util')).TextEncoder();
+options.getCryptographer = async () => (await import('crypto')).subtle;
 const rdClient = new Client(options);
 await rdClient.login('<username>', '<password>');
 const result = await rdClient.get('/datas');

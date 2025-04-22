@@ -10,10 +10,13 @@ export default {
       statements: 100
     }
   },
-  moduleFileExtensions: ['ts', 'tsx', 'js'],
-  testMatch: ['**/*.spec.+(ts|tsx)'],
+  moduleFileExtensions: ['ts', 'js'],
+  testMatch: ['**/*.spec.+(ts)'],
   transform: {
-    '^.+\\.(ts|tsx)$': ['ts-jest', { tsconfig: 'tsconfig.json', useESM: true }]
+    '^.+\\.(ts)$': ['ts-jest', { tsconfig: 'tsconfig.json', useESM: true }]
+  },
+  moduleNameMapper: {
+    '^(\\.\\.?\\/.+)\\.js$': '$1'
   },
   testEnvironment: 'jsdom'
 };

@@ -376,6 +376,16 @@ describe('getNonce', () => {
   });
 });
 
+describe('encryptPassword', () => {
+  test('encrypts', async () => {
+    // arrange act
+    const result = await createRandomHelpers().encryptPassword('#iL0v3Kitties');
+
+    // assert
+    expect(result).toBe('5edd56f2a05a89617f12550ef524370a229f93de');
+  });
+});
+
 describe('getHeaders', () => {
   test('should return authorization header if there is an authToken', async () => {
     // arrange
