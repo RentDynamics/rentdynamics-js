@@ -131,9 +131,17 @@ export class ClientOptions {
  */
 export class ClientHelpers {
   private options: ClientOptions;
+  private encoder: TextEncoder;
+  private cryptographer: SubtleCrypto;
 
-  constructor(options: ClientOptions) {
+  constructor(
+    options: ClientOptions,
+    encoder: TextEncoder | null = null,
+    cryptographer: SubtleCrypto | null = null
+  ) {
     this.options = options;
+    this.encoder = encoder ? encoder : new TextEncoder();
+    this.cryptographer = cryptographer ? cryptographer : crypto.subtle;
   }
 
   /**
@@ -211,22 +219,20 @@ export class ClientHelpers {
       typeof payloadStr !== 'undefined'
         ? timestamp + encodedUrl + payloadStr
         : timestamp + encodedUrl;
-    const encoder = await _getEncoder();
-    const cryptographer = await _getCryptographer();
-    const key = encoder.encode(this.options.apiSecretKey);
-    const data = encoder.encode(nonceStr);
+    const cryptographer = this.cryptographer;
+    const key = this.encoder.encode(this.options.apiSecretKey);
+    const data = this.encoder.encode(nonceStr);
     const algorithm = { name: 'HMAC', hash: 'SHA-1' };
-    const hmac = await cryptographer.subtle.importKey('raw', key, algorithm, false, ['sign']);
-    const signed = await cryptographer.subtle.sign(algorithm.name, hmac, data);
+    const hmac = await cryptographer.importKey('raw', key, algorithm, false, ['sign']);
+    const signed = await cryptographer.sign(algorithm.name, hmac, data);
     return _hexDigest(signed);
   }
 
   /** encryptPassword encrypts the password for login. */
   public async encryptPassword(password: string) {
-    const encoder = await _getEncoder();
-    const cryptographer = await _getCryptographer();
-    const encodedPassword = encoder.encode(password);
-    const digestedPassword = await cryptographer.subtle.digest('SHA-1', encodedPassword);
+    const cryptographer = this.cryptographer;
+    const encodedPassword = this.encoder.encode(password);
+    const digestedPassword = await cryptographer.digest('SHA-1', encodedPassword);
     return _hexDigest(digestedPassword);
   }
 }
@@ -235,14 +241,3 @@ const _hexDigest = (buf: ArrayBuffer): string =>
   Array.from(new Uint8Array(buf))
     .map(b => b.toString(16).padStart(2, '0'))
     .join('');
-
-/* istanbul ignore next */
-const _getEncoder = async () =>
-  _isNodeEnvironment() ? new (await import('util')).TextEncoder() : new TextEncoder();
-
-/* istanbul ignore next */
-const _getCryptographer = async () =>
-  _isNodeEnvironment() ? (await import('crypto')).webcrypto : crypto;
-
-/* istanbul ignore next */
-const _isNodeEnvironment = () => typeof window === 'undefined';

@@ -1,6 +1,16 @@
 import { Client, ClientOptions, ClientHelpers } from './index';
 import Chance from 'chance';
 
+beforeAll(async () => {
+  const util = await import('util');
+  const c = await import('crypto');
+  global.TextEncoder = util.TextEncoder;
+  // @ts-expect-error mocking jsdom must assign to read only
+  global.crypto.subtle = c.webcrypto.subtle;
+  // @ts-expect-error mocking jsdom and not matching interface purposely
+  global.fetch = jest.fn(() => {});
+});
+
 const createFetchMock = (overrides: Record<string, unknown> = {}) => {
   const opts = {
     ok: true,

@@ -13,11 +13,5 @@ export default {
     filename: 'rentdynamics.[name].js',
     path: path.resolve(__dirname, 'dist'),
     library: 'RentDynamics'
-  },
-  resolve: {
-    fallback: {
-      util: false,
-      crypto: false
-    }
   }
 };
