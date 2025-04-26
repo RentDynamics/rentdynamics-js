@@ -148,12 +148,22 @@ export class ClientHelpers {
         }
     }
 
+    private isEmptyOrUndefined(obj: any) {
+        if (obj === undefined) return true;
+        if (
+            typeof obj !== 'object' ||
+            obj === null ||
+            obj.constructor !== Object
+        ) {
+            return false;
+        }
+        return Object.keys(obj).length === 0;
+    }
+
     public getHeaders(endpoint: string, payload?: Object) {
         let headers: any = {};
         if (this.options.apiKey && this.options.apiSecretKey) {
-          if (typeof payload !== "undefined") {
-                payload = this.formatPayload(payload);
-            }
+            payload = !this.isEmptyOrUndefined(payload) ? this.formatPayload(payload) : '';
             let timestamp = Date.now();
             let nonce = this.getNonce(timestamp, endpoint, JSON.stringify(payload));
             if (this.options.authToken) {
