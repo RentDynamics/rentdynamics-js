@@ -466,4 +466,30 @@ describe('getHeaders', () => {
     expect(result['x-rd-timestamp']).toEqual(undefined);
     expect(result['Content-Type']).toEqual(undefined);
   });
+
+  test('nonce header should account for empty object payload', async () => {
+    const options = new ClientOptions();
+    options.apiKey = 'nJYLab]!';
+    options.apiSecretKey = 'ka4B#%NYx';
+    const clientHelpers = new ClientHelpers(options);
+    const fakeTimestamp = 1748543688878;
+    jest.spyOn(clientHelpers, 'getTimestamp').mockReturnValue(fakeTimestamp);
+
+    const result = await clientHelpers.getHeaders(testUrl, {});
+
+    expect(result['x-rd-api-nonce']).toEqual('d7369ddf9c7496de4e503073f9aa1962a2dc1158');
+  });
+
+  test('nonce header should account for empty array payload', async () => {
+    const options = new ClientOptions();
+    options.apiKey = 'nJYLab]!';
+    options.apiSecretKey = 'ka4B#%NYx';
+    const clientHelpers = new ClientHelpers(options);
+    const fakeTimestamp = 1748543688878;
+    jest.spyOn(clientHelpers, 'getTimestamp').mockReturnValue(fakeTimestamp);
+
+    const result = await clientHelpers.getHeaders(testUrl, []);
+
+    expect(result['x-rd-api-nonce']).toEqual('d7369ddf9c7496de4e503073f9aa1962a2dc1158');
+  });
 });

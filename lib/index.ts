@@ -178,15 +178,23 @@ export class ClientHelpers {
     this.options.authToken = t;
   }
 
+  public getTimestamp() {
+    return Date.now();
+  }
+
   /** getHeaders creates headers for the given params. */
   public async getHeaders(endpoint: string, payload?: Payload) {
     const headers: Record<string, string> = {};
     if (this.options.apiKey && this.options.apiSecretKey) {
       if (typeof payload !== 'undefined') {
         payload = this.formatPayload(payload);
+        payload = JSON.stringify(payload);
+        if (payload === '{}' || payload === '[]') {
+          payload = '';
+        }
       }
-      const timestamp = Date.now();
-      const nonce = await this.getNonce(timestamp, endpoint, JSON.stringify(payload));
+      const timestamp = this.getTimestamp();
+      const nonce = await this.getNonce(timestamp, endpoint, payload);
       if (this.options.authToken) {
         headers.Authorization = 'TOKEN ' + this.options.authToken;
       }
