@@ -201,7 +201,6 @@ export class ClientHelpers {
       headers['x-rd-api-key'] = this.options.apiKey;
       headers['x-rd-api-nonce'] = nonce;
       headers['x-rd-timestamp'] = timestamp.toString();
-      headers['Content-Type'] = 'application/json';
       return headers;
     }
     return headers;

@@ -440,15 +440,6 @@ describe('getHeaders', () => {
     expect(result['x-rd-timestamp']).toBeDefined();
   });
 
-  test('should return Content-Type header', async () => {
-    // arrange / act
-    const result = await createRandomHelpers().getHeaders(testUrl);
-
-    // assert
-    expect(result['Content-Type']).toBeDefined();
-    expect(result['Content-Type']).toEqual('application/json');
-  });
-
   test('should return empty headers if missing apiKey and apiSecretKey', async () => {
     // arrange
     const options = new ClientOptions();
@@ -464,7 +455,6 @@ describe('getHeaders', () => {
     expect(result['x-rd-api-key']).toEqual(undefined);
     expect(result['x-rd-api-nonce']).toEqual(undefined);
     expect(result['x-rd-timestamp']).toEqual(undefined);
-    expect(result['Content-Type']).toEqual(undefined);
   });
 
   test('nonce header should account for empty object payload', async () => {
