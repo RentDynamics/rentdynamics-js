@@ -124,7 +124,7 @@ describe('login', () => {
 
     // assert
     expect(spy.mock.calls.length).toBe(1);
-    expect(client.helpers.authToken).toBeUndefined();
+    expect(client.authToken).toBeUndefined();
     expect(response.ok).toBe(false);
   });
 
@@ -139,7 +139,7 @@ describe('login', () => {
         json: { token: expectedToken }
       })
     );
-    expect(client.helpers.authToken).toBeUndefined();
+    expect(client.authToken).toBeUndefined();
 
     // act
     const response = await client.login(username, password);
@@ -147,7 +147,7 @@ describe('login', () => {
     // assert
     expect(spyPost).toHaveBeenCalledTimes(1);
     expect(response.ok).toBe(true);
-    expect(client.helpers.authToken).toEqual(expectedToken);
+    expect(client.authToken).toEqual(expectedToken);
   });
 
   test('sends username and encrypted password', async () => {
@@ -175,10 +175,10 @@ describe('logout', () => {
   test('on success clears auth token', async () => {
     // arrange
     const options = createRandomOptions();
-    options.authToken = chance.apple_token();
     const rdClient = new Client(options);
+    rdClient.authToken = chance.apple_token();
     const spyPost = jest.spyOn(global, 'fetch').mockReturnValue(createFetchMock());
-    expect(options.authToken).toBeDefined();
+    expect(rdClient.authToken).toBeDefined();
 
     // act
     const response = await rdClient.logout();
@@ -186,17 +186,17 @@ describe('logout', () => {
     // assert
     expect(spyPost).toHaveBeenCalledTimes(1);
     expect(response.ok).toBe(true);
-    expect(options.authToken).toBeUndefined();
+    expect(rdClient.authToken).toBeUndefined();
   });
 
   test('on failure does not clear auth token', async () => {
     // arrange
     const options = createRandomOptions();
     const token = chance.apple_token();
-    options.authToken = token;
     const rdClient = new Client(options);
+    rdClient.authToken = token;
     const spyPost = jest.spyOn(global, 'fetch').mockReturnValue(createFetchMock({ ok: false }));
-    expect(options.authToken).toBeDefined();
+    expect(rdClient.authToken).toBeDefined();
 
     // act
     const response = await rdClient.logout();
@@ -204,15 +204,15 @@ describe('logout', () => {
     // assert
     expect(spyPost).toHaveBeenCalledTimes(1);
     expect(response.ok).toBe(false);
-    expect(options.authToken).toEqual(token);
+    expect(rdClient.authToken).toEqual(token);
   });
 
   test('sends auth token', async () => {
     // arrange
     const options = createRandomOptions();
     const token = chance.apple_token();
-    options.authToken = token;
     const rdClient = new Client(options);
+    rdClient.authToken = token;
     const spyPost = jest.spyOn(global, 'fetch').mockReturnValue(createFetchMock());
 
     // act
@@ -412,11 +412,10 @@ describe('getHeaders', () => {
   test('should return authorization header if there is an authToken', async () => {
     // arrange
     const options = createRandomOptions();
-    options.authToken = 'akK9KL2';
     const clientHelpers = new ClientHelpers(options);
 
     // act
-    const result = await clientHelpers.getHeaders(testUrl);
+    const result = await clientHelpers.getHeaders(testUrl, undefined, 'akK9KL2');
 
     // assert
     expect(result.Authorization).toBeDefined();
@@ -425,7 +424,6 @@ describe('getHeaders', () => {
   test(`should not return authorization header if there isn't an authToken`, async () => {
     // arrange
     const options = createRandomOptions();
-    options.authToken = '';
     const clientHelpers = new ClientHelpers(options);
 
     // act
