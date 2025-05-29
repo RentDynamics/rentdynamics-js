@@ -374,6 +374,28 @@ describe('getNonce', () => {
     // assert
     expect(result).toEqual('a724eb47b4fc644b2fe1fd5a0b778fc6cff1930c');
   });
+
+  test('when url contains a pipe', async () => {
+    // arrange
+    const url = '/foo?filters=bar=baz|qux=quux';
+
+    // act
+    const result = await clientHelpers.getNonce(timestamp, url);
+
+    // assert
+    expect(result).toEqual('4fc98a597e31a4b770ebb16ffd03eecd2c791453');
+  });
+
+  test('when url contains a space', async () => {
+    // arrange
+    const url = '/foo?filters=bar baz';
+
+    // act
+    const result = await clientHelpers.getNonce(timestamp, url);
+
+    // assert
+    expect(result).toEqual('99574971be58c966b467beebe6e09e7082a8a8e0');
+  });
 });
 
 describe('encryptPassword', () => {

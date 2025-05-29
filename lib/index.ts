@@ -237,7 +237,9 @@ export class ClientHelpers {
   /** getNonce calculates the nonce for the given params. */
   public async getNonce(timestamp: number, url: string, payloadStr?: string): Promise<string> {
     if (!this.options.apiSecretKey) return Promise.resolve('');
-    const encodedUrl = encodeURI(url).replace(/%7[Cc]/g, '|');
+    const encodedUrl = encodeURI(url)
+      .replace(/%7[Cc]/g, '|')
+      .replace(/%20/g, ' ');
     const nonceStr =
       typeof payloadStr !== 'undefined'
         ? timestamp + encodedUrl + payloadStr
