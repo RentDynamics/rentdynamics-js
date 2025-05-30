@@ -27,7 +27,7 @@ export class Client {
    */
   public async get(endpoint: string) {
     const fullUrl = this.helpers.baseUrl + endpoint;
-    const headers = await this.helpers.getHeaders(endpoint);
+    const headers = await this.helpers.getHeaders(endpoint, undefined, this.authToken);
     return fetch(fullUrl.replace(/\|/g, '%7C'), {
       method: 'GET',
       headers
@@ -42,7 +42,7 @@ export class Client {
    */
   public async put(endpoint: string, payload: Payload) {
     const fullUrl = this.helpers.baseUrl + endpoint;
-    const headers = await this.helpers.getHeaders(endpoint, payload);
+    const headers = await this.helpers.getHeaders(endpoint, payload, this.authToken);
     return fetch(fullUrl, {
       method: 'PUT',
       headers,
@@ -58,7 +58,7 @@ export class Client {
    */
   public async post(endpoint: string, payload: Payload) {
     const fullUrl = this.helpers.baseUrl + endpoint;
-    const headers = await this.helpers.getHeaders(endpoint, payload);
+    const headers = await this.helpers.getHeaders(endpoint, payload, this.authToken);
     return fetch(fullUrl, {
       method: 'POST',
       headers,
@@ -73,7 +73,7 @@ export class Client {
    */
   public async delete(endpoint: string) {
     const fullUrl = this.helpers.baseUrl + endpoint;
-    const headers = await this.helpers.getHeaders(endpoint);
+    const headers = await this.helpers.getHeaders(endpoint, undefined, this.authToken);
     return fetch(fullUrl, {
       method: 'DELETE',
       headers
@@ -206,6 +206,7 @@ export class ClientHelpers {
       headers['x-rd-api-key'] = this.options.apiKey;
       headers['x-rd-api-nonce'] = nonce;
       headers['x-rd-timestamp'] = timestamp.toString();
+      headers['Content-Type'] = 'application/json';
       return headers;
     }
     return headers;
