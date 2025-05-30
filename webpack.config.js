@@ -7,7 +7,7 @@ const __dirname = path.dirname(__filename);
 export default {
   mode: 'production',
   entry: {
-    [PACKAGE.version]: './dist/index.js'
+    [PACKAGE.version]: './dist/esm/index.js'
   },
   output: {
     filename: 'rentdynamics.[name].js',
