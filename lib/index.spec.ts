@@ -57,6 +57,11 @@ describe('get', () => {
     // assert
     expect(spy.mock.calls.length).toBe(1);
     expect(spy.mock.calls[0][0]).toEqual(`https://api.rentdynamics.dev${endpoint}`);
+    expect(
+      Object.entries(spy.mock.calls[0][1]?.headers || []).some(
+        ([k, v]) => k === 'Content-Type' && v === 'application/json'
+      )
+    ).toBe(true);
     expect(response.ok).toBe(v);
   });
 });
@@ -74,6 +79,11 @@ describe('put', () => {
     // assert
     expect(spy.mock.calls.length).toBe(1);
     expect(spy.mock.calls[0][0]).toEqual(`https://api.rentdynamics.dev${endpoint}`);
+    expect(
+      Object.entries(spy.mock.calls[0][1]?.headers || []).some(
+        ([k, v]) => k === 'Content-Type' && v === 'application/json'
+      )
+    ).toBe(true);
     expect(response.ok).toBe(v);
   });
 });
@@ -91,6 +101,11 @@ describe('post', () => {
     // assert
     expect(spy.mock.calls.length).toBe(1);
     expect(spy.mock.calls[0][0]).toEqual(`https://api.rentdynamics.dev${endpoint}`);
+    expect(
+      Object.entries(spy.mock.calls[0][1]?.headers || []).some(
+        ([k, v]) => k === 'Content-Type' && v === 'application/json'
+      )
+    ).toBe(true);
     expect(response.ok).toBe(v);
   });
 });
@@ -107,6 +122,11 @@ describe('delete', () => {
     // assert
     expect(spy.mock.calls.length).toBe(1);
     expect(spy.mock.calls[0][0]).toEqual(`https://api.rentdynamics.dev${endpoint}`);
+    expect(
+      Object.entries(spy.mock.calls[0][1]?.headers || []).some(
+        ([k, v]) => k === 'Content-Type' && v === 'application/json'
+      )
+    ).toBe(true);
     expect(response.ok).toBe(v);
   });
 });

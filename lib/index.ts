@@ -30,7 +30,10 @@ export class Client {
     const headers = await this.helpers.getHeaders(endpoint, undefined, this.authToken);
     return fetch(fullUrl.replace(/\|/g, '%7C'), {
       method: 'GET',
-      headers
+      headers: {
+        ...headers,
+        'Content-Type': 'application/json'
+      }
     });
   }
 
@@ -45,7 +48,10 @@ export class Client {
     const headers = await this.helpers.getHeaders(endpoint, payload, this.authToken);
     return fetch(fullUrl, {
       method: 'PUT',
-      headers,
+      headers: {
+        ...headers,
+        'Content-Type': 'application/json'
+      },
       body: JSON.stringify(payload)
     });
   }
@@ -61,7 +67,10 @@ export class Client {
     const headers = await this.helpers.getHeaders(endpoint, payload, this.authToken);
     return fetch(fullUrl, {
       method: 'POST',
-      headers,
+      headers: {
+        ...headers,
+        'Content-Type': 'application/json'
+      },
       body: JSON.stringify(payload)
     });
   }
@@ -76,7 +85,10 @@ export class Client {
     const headers = await this.helpers.getHeaders(endpoint, undefined, this.authToken);
     return fetch(fullUrl, {
       method: 'DELETE',
-      headers
+      headers: {
+        ...headers,
+        'Content-Type': 'application/json'
+      }
     });
   }
 
@@ -206,7 +218,6 @@ export class ClientHelpers {
       headers['x-rd-api-key'] = this.options.apiKey;
       headers['x-rd-api-nonce'] = nonce;
       headers['x-rd-timestamp'] = timestamp.toString();
-      headers['Content-Type'] = 'application/json';
       return headers;
     }
     return headers;
