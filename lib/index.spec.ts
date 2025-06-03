@@ -1,413 +1,257 @@
-import { Client, ClientOptions, ClientHelpers} from "./index";
-import Chance from "chance";
-import jsSHA from "jssha";
+import { Client, ClientOptions, ClientHelpers } from './index';
+import Chance from 'chance';
 
-describe('all', () => {
-  // setup and configure chance
-  let chance = new Chance();
-  // setup options for client
-  let options = new ClientOptions();
-  options.development = true;
+beforeAll(async () => {
+  const util = await import('util');
+  const c = await import('crypto');
+  global.TextEncoder = util.TextEncoder;
+  // @ts-expect-error mocking jsdom must assign to read only
+  global.crypto.subtle = c.webcrypto.subtle;
+  // @ts-expect-error mocking jsdom and not matching interface purposely
+  global.fetch = jest.fn(() => {});
+});
+
+const createFetchMock = (overrides: Record<string, unknown> = {}) => {
+  const opts = {
+    ok: true,
+    json: {},
+    text: '{}',
+    ...overrides
+  };
+  return Promise.resolve({
+    ok: opts.ok,
+    json: () => Promise.resolve(opts.json),
+    text: () => Promise.resolve(opts.text)
+  } as Response);
+};
+
+const chance = new Chance();
+const testUrl = '/someUrlolz';
+
+const createRandomOptions = () => {
+  const options = new ClientOptions();
   options.apiKey = chance.string();
   options.apiSecretKey = chance.string();
-  let rdClient: Client | any = new Client(options);
-  let mockText = '';
-  let mockFetchResultObject = {
-    ok: true,
-    clone: () => {
-      return mockFetchResultObject;
-    },
-    json: () => {
-      return mockFetchResultObject;
-    },
-    text: jest.fn().mockReturnValue(Promise.resolve(mockText)),
-    catch: (cb: any) => {
-      return cb(mockText)
-    }
-  };
-  let mockFetchPromiseObject = {
-    then: (cb: any) => {
-      cb(mockFetchResultObject)
-    }
-  };
+  return options;
+};
 
-  beforeEach(() => {
+const createRandomHelpers = () => {
+  const options = createRandomOptions();
+  return new ClientHelpers(options);
+};
 
-  })
-
-  test.each([['get'], ['put'], ['post'], ['delete']])(
-      'when %s calls fetch and server returns empty success response it should return successful',
-      async (methodName) => {
-        // arrange
-        let endpoint = chance.string();
-        let spy = jest.spyOn(rdClient, '_fetch').mockResolvedValue(mockFetchPromiseObject);
-        let include = chance.string();
-        let parameters = {include: [include]};
-
-        // act
-        const result = await rdClient[methodName](endpoint, parameters);
-
-        // assert
-        expect.assertions(3);
-        expect(result).toEqual(mockText);
-        expect(spy).toHaveBeenCalledTimes(1);
-        expect(mockFetchResultObject.text).toHaveBeenCalledTimes(1);
-      });
-
-  test.each([['get'], ['put'], ['post'], ['delete']])(
-      'when %s calls fetch and server returns empty error response it should return not successful',
-      async (methodName) => {
-        // arrange
-        mockFetchResultObject.ok = false
-        let endpoint = chance.string();
-        let spy = jest.spyOn(rdClient, '_fetch').mockResolvedValue(mockFetchPromiseObject);
-        let include = chance.string();
-        let parameters = {include: [include]};
-
-        // act
-        const result = await rdClient[methodName](endpoint, parameters);
-
-        // assert
-        expect.assertions(3);
-        expect(result).toEqual(mockFetchResultObject);
-        expect(spy).toHaveBeenCalledTimes(1);
-        expect(mockFetchResultObject.text).toHaveBeenCalledTimes(0);
-      });
-
-})
+const createRandomClient = () => {
+  const options = createRandomOptions();
+  return new Client(options);
+};
 
 describe('get', () => {
-
-  test('get calls fetch with method GET - fail', () => {
-    // setup and configure chance
-    let chance = new Chance();
-
-    // setup options for client
-    let options = new ClientOptions();
-    options.apiKey = chance.string();
-    options.apiSecretKey = chance.string();
-
+  test.each([true, false])('calls fetch with ok response of %p', async v => {
     // arrange
-    let rdClient = new Client(options);
-    let endpoint = chance.string();
-    let spy = jest.spyOn(rdClient, '_fetch').mockResolvedValue({
-      ok: false, json: () => {
-        return {};
-      }
-    });
+    const endpoint = chance.string();
+    const spy = jest.spyOn(global, 'fetch').mockResolvedValue(createFetchMock({ ok: v }));
 
     // act
-    let response = rdClient.get(endpoint);
-
-      // assert
-      expect(spy.mock.calls.length).toBe(1);
-  });
-
-  test('get calls fetch with method GET - success', () => {
-    // setup and configure chance
-    let chance = new Chance();
-
-    // setup options for client
-    let options = new ClientOptions();
-    options.apiKey = chance.string();
-    options.apiSecretKey = chance.string();
-
-    // arrange
-    let rdClient = new Client(options);
-    let endpoint = chance.string();
-    let spy = jest.spyOn(rdClient, '_fetch').mockResolvedValue({ok: true, json: () => { return {}; }});
-
-    // act
-    let response = rdClient.get(endpoint);
+    const response = await createRandomClient().get(endpoint);
 
     // assert
     expect(spy.mock.calls.length).toBe(1);
+    expect(spy.mock.calls[0][0]).toEqual(`https://api.rentdynamics.dev${endpoint}`);
+    expect(
+      Object.entries(spy.mock.calls[0][1]?.headers || []).some(
+        ([k, v]) => k === 'Content-Type' && v === 'application/json'
+      )
+    ).toBe(true);
+    expect(response.ok).toBe(v);
   });
-
-  test('get with parameters calls fetch with method GET - success', () => {
-    // setup and configure chance
-    let chance = new Chance();
-
-    // setup options for client
-    let options = new ClientOptions();
-    options.development = true;
-    options.apiKey = chance.string();
-    options.apiSecretKey = chance.string();
-
-    // arrange
-    let rdClient = new Client(options);
-    let endpoint = chance.string();
-    let spy = jest.spyOn(rdClient, '_fetch').mockResolvedValue({ok: true, json: () => { return {}; }});
-    let include = chance.string();
-    let parameters = {include: [include]};
-
-    // act
-    let response = rdClient.get(endpoint, parameters);
-
-    // assert
-    expect(spy.mock.calls.length).toBe(1);
-    expect(spy.mock.calls[0][0]).toEqual(`https://api-dev.rentdynamics.com${endpoint}?include=${include}`);
-  });
-
 });
-
 
 describe('put', () => {
-
-  test('put calls fetch with method PUT - fail', () => {
-      // setup and configure chance
-      let chance = new Chance();
-
-      // setup options for client
-      let options = new ClientOptions();
-      options.apiKey = chance.string();
-      options.apiSecretKey = chance.string();
-
-      // arrange
-      let rdClient = new Client(options);
-      let payload = {};
-      let endpoint = chance.string();
-      let spy = jest.spyOn(rdClient, '_fetch').mockResolvedValue({ok: false, json: () => { return {}; }});
-
-      // act
-      let response = rdClient.put(endpoint, payload);
-
-      // assert
-      expect(spy.mock.calls.length).toBe(1);
-  });
-
-  test('put calls fetch with method PUT - success', () => {
-    // setup and configure chance
-    let chance = new Chance();
-
-    // setup options for client
-    let options = new ClientOptions();
-    options.apiKey = chance.string();
-    options.apiSecretKey = chance.string();
-
+  test.each([true, false])('calls fetch with ok response of %p', async v => {
     // arrange
-    let rdClient = new Client(options);
-    let payload = {};
-    let endpoint = chance.string();
-    let spy = jest.spyOn(rdClient, '_fetch').mockResolvedValue({ok: true, json: () => { return {}; }});
+    const payload = {};
+    const endpoint = chance.string();
+    const spy = jest.spyOn(global, 'fetch').mockResolvedValue(createFetchMock({ ok: v }));
 
     // act
-    let response = rdClient.put(endpoint, payload);
+    const response = await createRandomClient().put(endpoint, payload);
 
     // assert
     expect(spy.mock.calls.length).toBe(1);
+    expect(spy.mock.calls[0][0]).toEqual(`https://api.rentdynamics.dev${endpoint}`);
+    expect(
+      Object.entries(spy.mock.calls[0][1]?.headers || []).some(
+        ([k, v]) => k === 'Content-Type' && v === 'application/json'
+      )
+    ).toBe(true);
+    expect(response.ok).toBe(v);
   });
-
 });
-
 
 describe('post', () => {
-
-  test('post calls fetch with method POST - fail', () => {
-      // setup and configure chance
-      let chance = new Chance();
-
-      // setup options for client
-      let options = new ClientOptions();
-      options.apiKey = chance.string();
-      options.apiSecretKey = chance.string();
-
-      // arrange
-      let rdClient = new Client(options);
-      let payload = {};
-      let endpoint = chance.string();
-      let spy = jest.spyOn(rdClient, '_fetch').mockResolvedValue({ok: false, json: () => { return {}; }});
-
-      // act
-      let response = rdClient.post(endpoint, payload);
-
-      // assert
-      expect(spy.mock.calls.length).toBe(1);
-  });
-
-  test('post calls fetch with method POST - success', () => {
-    // setup and configure chance
-    let chance = new Chance();
-
-    // setup options for client
-    let options = new ClientOptions();
-    options.apiKey = chance.string();
-    options.apiSecretKey = chance.string();
-
+  test.each([true, false])('calls fetch with ok response of %p', async v => {
     // arrange
-    let rdClient = new Client(options);
-    let payload = {};
-    let endpoint = chance.string();
-    let spy = jest.spyOn(rdClient, '_fetch').mockResolvedValue({ok: true, json: () => { return {}; }});
+    const payload = {};
+    const endpoint = chance.string();
+    const spy = jest.spyOn(global, 'fetch').mockResolvedValue(createFetchMock({ ok: v }));
 
     // act
-    let response = rdClient.post(endpoint, payload);
+    const response = await createRandomClient().post(endpoint, payload);
 
     // assert
     expect(spy.mock.calls.length).toBe(1);
+    expect(spy.mock.calls[0][0]).toEqual(`https://api.rentdynamics.dev${endpoint}`);
+    expect(
+      Object.entries(spy.mock.calls[0][1]?.headers || []).some(
+        ([k, v]) => k === 'Content-Type' && v === 'application/json'
+      )
+    ).toBe(true);
+    expect(response.ok).toBe(v);
   });
-
 });
-
 
 describe('delete', () => {
-
-  test('delete calls fetch with method DELETE - fail', () => {
-      // setup and configure chance
-      let chance = new Chance();
-
-      // setup options for client
-      let options = new ClientOptions();
-      options.apiKey = chance.string();
-      options.apiSecretKey = chance.string();
-
-      // arrange
-      let rdClient = new Client(options);
-      let endpoint = chance.string();
-      let spy = jest.spyOn(rdClient, '_fetch').mockResolvedValue({ok: false, json: () => { return {}; }});
-
-      // act
-      let response = rdClient.delete(endpoint);
-
-      // assert
-      expect(spy.mock.calls.length).toBe(1);
-  });
-
-  test('delete calls fetch with method DELETE - success', () => {
-    // setup and configure chance
-    let chance = new Chance();
-
-    // setup options for client
-    let options = new ClientOptions();
-    options.apiKey = chance.string();
-    options.apiSecretKey = chance.string();
-
+  test.each([true, false])('calls fetch with ok response of %p', async v => {
     // arrange
-    let rdClient = new Client(options);
-    let endpoint = chance.string();
-    let spy = jest.spyOn(rdClient, '_fetch').mockResolvedValue({ok: true, json: () => { return {}; }});
+    const endpoint = chance.string();
+    const spy = jest.spyOn(global, 'fetch').mockResolvedValue(createFetchMock({ ok: v }));
 
     // act
-    let response = rdClient.delete(endpoint);
+    const response = await createRandomClient().delete(endpoint);
 
     // assert
     expect(spy.mock.calls.length).toBe(1);
+    expect(spy.mock.calls[0][0]).toEqual(`https://api.rentdynamics.dev${endpoint}`);
+    expect(
+      Object.entries(spy.mock.calls[0][1]?.headers || []).some(
+        ([k, v]) => k === 'Content-Type' && v === 'application/json'
+      )
+    ).toBe(true);
+    expect(response.ok).toBe(v);
   });
-
 });
-
 
 describe('login', () => {
-
-  test('login calls', () => {
-      // setup and configure chance
-      let chance = new Chance();
-
-      // setup options for client
-      let options = new ClientOptions();
-      options.apiKey = chance.string();
-      options.apiSecretKey = chance.string();
-
-      // arrange
-      let rdClient = new Client(options);
-      let username = chance.string();
-      let password = chance.string();
-      let spy = jest.spyOn(rdClient, '_fetch').mockResolvedValue({ok: false, json: () => { return {authToken: chance.string()}; }});
-
-      // act
-      let response = rdClient.login(username, password);
-
-      // assert
-      expect(spy.mock.calls.length).toBe(1);
-  });
-
-  test('when login calls post authToken should be set to returned token', async () => {
-    // setup and configure chance
-    let chance = new Chance();
-    let expectedToken = chance.apple_token();
-
-    // setup options for client
-    let options = new ClientOptions();
-    options.apiKey = chance.string();
-    options.apiSecretKey = chance.string();
-
+  test('on failure does not set auth token', async () => {
     // arrange
-    let rdClient = new Client(options);
-    let username = chance.string();
-    let password = chance.string();
-    let spyPost = jest.spyOn(rdClient, 'post').mockReturnValue(Promise.resolve({ token: expectedToken }));
+    const username = chance.string();
+    const password = chance.string();
+    const spy = jest.spyOn(global, 'fetch').mockResolvedValue(createFetchMock({ ok: false }));
+    const client = createRandomClient();
 
     // act
-    let response = await rdClient.login(username, password);
+    const response = await client.login(username, password);
+
+    // assert
+    expect(spy.mock.calls.length).toBe(1);
+    expect(client.authToken).toBeUndefined();
+    expect(response.ok).toBe(false);
+  });
+
+  test('on success sets auth token', async () => {
+    // arrange
+    const client = createRandomClient();
+    const expectedToken = chance.apple_token();
+    const username = chance.string();
+    const password = chance.string();
+    const spyPost = jest.spyOn(global, 'fetch').mockReturnValue(
+      createFetchMock({
+        json: { token: expectedToken }
+      })
+    );
+    expect(client.authToken).toBeUndefined();
+
+    // act
+    const response = await client.login(username, password);
 
     // assert
     expect(spyPost).toHaveBeenCalledTimes(1);
-    expect(options.authToken).toEqual(expectedToken);
+    expect(response.ok).toBe(true);
+    expect(client.authToken).toEqual(expectedToken);
   });
 
-});
+  test('sends username and encrypted password', async () => {
+    // arrange
+    const username = chance.string();
+    const password = chance.string();
+    const spyPost = jest.spyOn(global, 'fetch').mockReturnValue(
+      createFetchMock({
+        json: { token: chance.apple_token() }
+      })
+    );
 
+    // act
+    await createRandomClient().login(username, password);
+
+    // assert
+    expect(spyPost).toHaveBeenCalledTimes(1);
+    const sentBody = JSON.parse(spyPost.mock.calls[0][1]?.body as string);
+    expect(sentBody.username).toBe(username);
+    expect(sentBody.password).not.toBe(password);
+  });
+});
 
 describe('logout', () => {
-
-  test('logout calls', () => {
-    // setup and configure chance
-    let chance = new Chance();
-
-    // setup options for client
-    let options = new ClientOptions();
-    options.apiKey = chance.string();
-    options.apiSecretKey = chance.string();
-    options.authToken = chance.string();
-
+  test('on success clears auth token', async () => {
     // arrange
-    let rdClient = new Client(options);
-    let spy = jest.spyOn(rdClient, '_fetch').mockResolvedValue({ok: true, json: () => { return {authToken: null}; }});
+    const options = createRandomOptions();
+    const rdClient = new Client(options);
+    rdClient.authToken = chance.apple_token();
+    const spyPost = jest.spyOn(global, 'fetch').mockReturnValue(createFetchMock());
+    expect(rdClient.authToken).toBeDefined();
 
     // act
-    let response = rdClient.logout();
-
-    // assert
-    expect(spy).toHaveBeenCalled();
-    expect(spy.mock.calls.length).toBe(1);
-  });
-
-  test('when logout calls post authToken should be set to undefined', async () => {
-    // setup and configure chance
-    let chance = new Chance();
-    let expectedToken = undefined;
-
-    // setup options for client
-    let options = new ClientOptions();
-    options.apiKey = chance.string();
-    options.apiSecretKey = chance.string();
-    options.authToken = chance.apple_token();
-
-    // arrange
-    let rdClient = new Client(options);
-    let spyPost = jest.spyOn(rdClient, 'post').mockReturnValue(Promise.resolve({ }));
-
-    // act
-    let response = await rdClient.logout();
+    const response = await rdClient.logout();
 
     // assert
     expect(spyPost).toHaveBeenCalledTimes(1);
-    expect(options.authToken).toEqual(expectedToken);
+    expect(response.ok).toBe(true);
+    expect(rdClient.authToken).toBeUndefined();
   });
 
-});
-
-
-describe('formatPayload', () => {
-
-  test('should alphabetize items in dictionary', () => {
+  test('on failure does not clear auth token', async () => {
     // arrange
-    let payload = { orange: 1, blue: 2 };
-    let options = new ClientOptions();
-    let clientHelpers = new ClientHelpers(options);
+    const options = createRandomOptions();
+    const token = chance.apple_token();
+    const rdClient = new Client(options);
+    rdClient.authToken = token;
+    const spyPost = jest.spyOn(global, 'fetch').mockReturnValue(createFetchMock({ ok: false }));
+    expect(rdClient.authToken).toBeDefined();
 
     // act
-    let result = clientHelpers.formatPayload(payload);
+    const response = await rdClient.logout();
+
+    // assert
+    expect(spyPost).toHaveBeenCalledTimes(1);
+    expect(response.ok).toBe(false);
+    expect(rdClient.authToken).toEqual(token);
+  });
+
+  test('sends auth token', async () => {
+    // arrange
+    const options = createRandomOptions();
+    const token = chance.apple_token();
+    const rdClient = new Client(options);
+    rdClient.authToken = token;
+    const spyPost = jest.spyOn(global, 'fetch').mockReturnValue(createFetchMock());
+
+    // act
+    await rdClient.logout();
+
+    // assert
+    expect(spyPost).toHaveBeenCalledTimes(1);
+    const sentBody = JSON.parse(spyPost.mock.calls[0][1]?.body as string);
+    expect(sentBody.authToken).toBe(token);
+  });
+});
+
+describe('formatPayload', () => {
+  test('should alphabetize items in object', () => {
+    // arrange
+    const payload = { orange: 1, blue: 2 };
+
+    // act
+    const result = createRandomHelpers().formatPayload(payload);
 
     // assert
     expect(Object.keys(result)[0]).toEqual('blue');
@@ -415,25 +259,21 @@ describe('formatPayload', () => {
 
   test('should alphabetize nested items', () => {
     // arrange
-    let payload = { orange: 1, blue: { red: 21, pink: 22 } };
-    let options = new ClientOptions();
-    let clientHelpers = new ClientHelpers(options);
+    const payload = { orange: 1, blue: { red: 21, pink: 22 } };
 
     // act
-    let result = clientHelpers.formatPayload(payload);
+    const result = createRandomHelpers().formatPayload(payload);
 
     // assert
-    expect(Object.keys(result['blue'])[0]).toEqual('pink');
+    expect(Object.keys(result.blue)[0]).toEqual('pink');
   });
 
-  test('should alphabetize keys even when their values are null', () => {
+  test('should alphabetize keys when their values are null', () => {
     // arrange
-    let payload = { orange: null, blue: null };
-    let options = new ClientOptions();
-    let clientHelpers = new ClientHelpers(options);
+    const payload = { orange: null, blue: null };
 
     // act
-    let result = clientHelpers.formatPayload(payload);
+    const result = createRandomHelpers().formatPayload(payload);
 
     // assert
     expect(Object.keys(result)[0]).toEqual('blue');
@@ -441,419 +281,245 @@ describe('formatPayload', () => {
 
   test('should remove spaces from formatted items', () => {
     // arrange
-    let payload = { orange: 1, blue: { red: "a  f  g", pink: "b  t  g" } };
-    let options = new ClientOptions();
-    let clientHelpers = new ClientHelpers(options);
+    const payload = { orange: 1, blue: { red: 'a  f  g', pink: 'b  t  g' } };
 
     // act
-    let result = clientHelpers.formatPayload(payload);
+    const result = createRandomHelpers().formatPayload(payload);
 
     // assert
-    expect(result['blue']['pink']).toEqual('btg');
+    expect(result.blue.pink).toEqual('btg');
   });
 
   test('should pass with Array inside of object', () => {
     // arrange
-    let payload = {
+    const payload = {
       orange: 5,
       blue: [
         { red: 6, pink: 7 },
         { green: 3, blue: 4 }
       ]
     };
-    let options = new ClientOptions();
-    let clientHelpers = new ClientHelpers(options);
 
     // act
-    let result = clientHelpers.formatPayload(payload);
+    const result = createRandomHelpers().formatPayload(payload);
 
     // assert
-    expect(Object.keys(result['blue'][0])[0]).toEqual('pink');
+    expect(Object.keys(result.blue[0])[0]).toEqual('pink');
   });
 
   test('should pass with Array of primitive values', () => {
     // arrange
-    let payload = {
+    const payload = {
       orange: 5,
       blue: [1, 5, 2]
     };
-    let options = new ClientOptions();
-    let clientHelpers = new ClientHelpers(options);
 
     // act
-    let result = clientHelpers.formatPayload(payload);
+    const result = createRandomHelpers().formatPayload(payload);
 
     // assert
-    expect(result['orange']).toEqual(5);
-    expect(result['blue'][0]).toEqual(1);
-    expect(result['blue'][1]).toEqual(5);
-    expect(result['blue'][2]).toEqual(2);
+    expect(result.orange).toEqual(5);
+    expect(result.blue[0]).toEqual(1);
+    expect(result.blue[1]).toEqual(5);
+    expect(result.blue[2]).toEqual(2);
   });
-
 });
 
-
 describe('getNonce', () => {
+  const timestamp = 1744825113438;
+  let clientHelpers!: ClientHelpers;
 
-  test('should handle arrays of primitive values', () => {
-    // arrange
-    let chance = new Chance();
-    let payload = {
-      orange: 5,
-      blue: [1, 5, 2]
-    };
-    let options = new ClientOptions();
-    options.apiKey = chance.string();
-    options.apiSecretKey = chance.string();
-    let clientHelpers = new ClientHelpers(options);
-    let formattedPayload = JSON.stringify(clientHelpers.formatPayload(payload));
-    let timestamp = Date.now();
-    let url = '/someUrlolz';
-    let nonce = timestamp + url + formattedPayload;
-    var shaObj = new jsSHA('SHA-1', 'TEXT');
-    shaObj.setHMACKey(options.apiSecretKey, 'TEXT');
-    shaObj.update(nonce);
-    let hashedNonce = shaObj.getHMAC('HEX');
-
-    // act
-    let result = clientHelpers.getNonce(timestamp, url, formattedPayload);
-
-    // assert
-    expect(hashedNonce).toEqual(result);
+  beforeEach(() => {
+    const options = new ClientOptions();
+    options.apiKey = 'nJYLab]!';
+    options.apiSecretKey = 'ka4B#%NYx';
+    clientHelpers = new ClientHelpers(options);
   });
 
-  test('should return hash of timestamp, url, payload and secret key', () => {
+  const getFormattedPayloadFor = (payload: Record<string, unknown>) =>
+    JSON.stringify(clientHelpers.formatPayload(payload));
+
+  test.each([
+    [
+      'with array of primitive values',
+      { orange: 5, blue: [1, 5, 2] },
+      '0da0f05839bef83df7382f9d936c236418f7bb3c'
+    ],
+    [
+      'should return hash of timestamp, url, payload and secret key',
+      {
+        orange: 1,
+        blue: {
+          red: 'a  f  g',
+          pink: 'b  t  g'
+        }
+      },
+      '608e3b1b7fc9f68b226275d8125554adf1f44086'
+    ]
+  ])('%s', async (_, unformattedPayload, expectedNonce) => {
     // arrange
-    let chance = new Chance();
-    let payload = {
+    const formattedPayload = getFormattedPayloadFor(unformattedPayload);
+
+    // act
+    const result = await clientHelpers.getNonce(timestamp, testUrl, formattedPayload);
+
+    // assert
+    expect(result).toEqual(expectedNonce);
+  });
+
+  test('returns empty string if missing apiSecretKey', async () => {
+    // arrange
+    const o = new ClientOptions();
+    o.apiKey = 'nJYLab]!';
+    const c = new ClientHelpers(o);
+    const formattedPayload = getFormattedPayloadFor({
       orange: 1,
       blue: {
-        red: "a  f  g",
-        pink: "b  t  g"
+        red: 'a  f  g',
+        pink: 'b  t  g'
       }
-    };
-    let options = new ClientOptions();
-    options.apiKey = chance.string();
-    options.apiSecretKey = chance.string();
-    let clientHelpers = new ClientHelpers(options);
-    let formattedPayload = JSON.stringify(clientHelpers.formatPayload(payload));
-    let timestamp = Date.now();
-    let url = '/someUrlolz';
-    let nonce = timestamp + url + formattedPayload;
-    var shaObj = new jsSHA('SHA-1', 'TEXT');
-    shaObj.setHMACKey(options.apiSecretKey, 'TEXT');
-    shaObj.update(nonce);
-    let hashedNonce = shaObj.getHMAC('HEX');
+    });
 
     // act
-    let result = clientHelpers.getNonce(timestamp, url, formattedPayload);
-
-    // assert
-    expect(hashedNonce).toEqual(result);
-  });
-
-  test('should return hash of timestamp, url and secret key if no payload exists', () => {
-    // arrange
-    let chance = new Chance();
-    let options = new ClientOptions();
-    options.apiKey = chance.string();
-    options.apiSecretKey = chance.string();
-    let clientHelpers = new ClientHelpers(options);
-    let timestamp = Date.now();
-    let url = '/someUrlolz';
-    let nonce = timestamp + url;
-    var shaObj = new jsSHA('SHA-1', 'TEXT');
-    shaObj.setHMACKey(options.apiSecretKey, 'TEXT');
-    shaObj.update(nonce);
-    let hashedNonce = shaObj.getHMAC('HEX');
-
-    // act
-    let result = clientHelpers.getNonce(timestamp, url);
-
-    // assert
-    expect(hashedNonce).toEqual(result);
-  });
-
-  test('should return empty string if missing apiSecretKey', () => {
-    // arrange
-    let payload = {
-      orange: 1,
-      blue: {
-        red: "a  f  g",
-        pink: "b  t  g"
-      }
-    };
-    let options = new ClientOptions();
-    options.apiSecretKey = undefined;
-    let clientHelpers = new ClientHelpers(options);
-    let formattedPayload = JSON.stringify(clientHelpers.formatPayload(payload));
-    let timestamp = Date.now();
-    let url = '/someUrlolz';
-
-    // act
-    let result = clientHelpers.getNonce(timestamp, url, formattedPayload);
+    const result = await c.getNonce(timestamp, testUrl, formattedPayload);
 
     // assert
     expect(result).toEqual('');
   });
 
+  test('when no payload is passed', async () => {
+    // arrange / act
+    const result = await clientHelpers.getNonce(timestamp, testUrl);
+
+    // assert
+    expect(result).toEqual('a724eb47b4fc644b2fe1fd5a0b778fc6cff1930c');
+  });
+
+  test('when url contains a pipe', async () => {
+    // arrange
+    const url = '/foo?filters=bar=baz|qux=quux';
+
+    // act
+    const result = await clientHelpers.getNonce(timestamp, url);
+
+    // assert
+    expect(result).toEqual('4fc98a597e31a4b770ebb16ffd03eecd2c791453');
+  });
+
+  test('when url contains a space', async () => {
+    // arrange
+    const url = '/foo?filters=bar baz';
+
+    // act
+    const result = await clientHelpers.getNonce(timestamp, url);
+
+    // assert
+    expect(result).toEqual('99574971be58c966b467beebe6e09e7082a8a8e0');
+  });
 });
 
+describe('encryptPassword', () => {
+  test('encrypts', async () => {
+    // arrange act
+    const result = await createRandomHelpers().encryptPassword('#iL0v3Kitties');
+
+    // assert
+    expect(result).toBe('5edd56f2a05a89617f12550ef524370a229f93de');
+  });
+});
 
 describe('getHeaders', () => {
-
-  test('should return authorization header if there is an authToken', () => {
+  test('should return authorization header if there is an authToken', async () => {
     // arrange
-    let chance = new Chance();
-    let url = '/someUrlolz';
-    let options = new ClientOptions();
-    options.apiKey = chance.string();
-    options.apiSecretKey = chance.string();
-    options.authToken = 'akK9KL2';
-    let clientHelpers = new ClientHelpers(options);
+    const options = createRandomOptions();
+    const clientHelpers = new ClientHelpers(options);
 
     // act
-    let result = clientHelpers.getHeaders(url);
+    const result = await clientHelpers.getHeaders(testUrl, undefined, 'akK9KL2');
 
     // assert
-    expect(result['Authorization']).toBeDefined();
+    expect(result.Authorization).toBeDefined();
   });
 
-  test('should not return authorization header if there isnt an authToken', () => {
+  test(`should not return authorization header if there isn't an authToken`, async () => {
     // arrange
-    let chance = new Chance();
-    let url = '/someUrlolz';
-    let options = new ClientOptions();
-    options.authToken = '';
-    options.apiKey = chance.string();
-    options.apiSecretKey = chance.string();
-    let clientHelpers = new ClientHelpers(options);
+    const options = createRandomOptions();
+    const clientHelpers = new ClientHelpers(options);
 
     // act
-    let result = clientHelpers.getHeaders(url);
+    const result = await clientHelpers.getHeaders(testUrl);
+
     // assert
-    expect(result['Authorization']).toBeUndefined();
+    expect(result.Authorization).toBeUndefined();
   });
 
-  test('should return x-rd-api-key header', () => {
-    // arrange
-    let chance = new Chance();
-    let url = '/someUrlolz';
-    let options = new ClientOptions();
-    options.apiKey = chance.string();
-    options.apiSecretKey = chance.string();
-    let clientHelpers = new ClientHelpers(options);
-
-    // act
-    let result = clientHelpers.getHeaders(url);
+  test('should return x-rd-api-key header', async () => {
+    // arrange / act
+    const result = await createRandomHelpers().getHeaders(testUrl);
 
     // assert
     expect(result['x-rd-api-key']).toBeDefined();
   });
 
-  test('should return x-rd-api-nonce header', () => {
+  test('should return x-rd-api-nonce header', async () => {
     // arrange
-    let chance = new Chance();
-    let url = '/someUrlolz';
-    let payload = { orange: 1, blue: 2 };
-    let options = new ClientOptions();
-    options.apiKey = chance.string();
-    options.apiSecretKey = chance.string();
-    let clientHelpers = new ClientHelpers(options);
+    const payload = { orange: 1, blue: 2 };
 
     // act
-    let result = clientHelpers.getHeaders(url, payload);
+    const result = await createRandomHelpers().getHeaders(testUrl, payload);
 
     // assert
     expect(result['x-rd-api-nonce']).toBeDefined();
   });
 
-  test('should return x-rd-timestamp header', () => {
-    // arrange
-    let chance = new Chance();
-    let url = '/someUrlolz';
-    let options = new ClientOptions();
-    options.apiKey = chance.string();
-    options.apiSecretKey = chance.string();
-    let clientHelpers = new ClientHelpers(options);
-
-    // act
-    let result = clientHelpers.getHeaders(url);
+  test('should return x-rd-timestamp header', async () => {
+    // arrange / act
+    const result = await createRandomHelpers().getHeaders(testUrl);
 
     // assert
     expect(result['x-rd-timestamp']).toBeDefined();
   });
 
-  test('should return Content-Type header', () => {
+  test('should return empty headers if missing apiKey and apiSecretKey', async () => {
     // arrange
-    let chance = new Chance();
-    let url = '/someUrlolz';
-    let options = new ClientOptions();
-    options.apiKey = chance.string();
-    options.apiSecretKey = chance.string();
-    let clientHelpers = new ClientHelpers(options);
-
-    // act
-    let result = clientHelpers.getHeaders(url);
-
-    // assert
-    expect(result['Content-Type']).toBeDefined();
-    expect(result['Content-Type']).toEqual('application/json');
-  });
-
-  test('should return empty headers if missing apiKey and apiSecretKey', () => {
-    // arrange
-    let url = '/someUrlolz';
-    let options = new ClientOptions();
+    const options = new ClientOptions();
     options.apiKey = undefined;
     options.apiSecretKey = undefined;
-    let clientHelpers = new ClientHelpers(options);
+    const clientHelpers = new ClientHelpers(options);
 
     // act
-    let result = clientHelpers.getHeaders(url);
+    const result = await clientHelpers.getHeaders(testUrl);
 
     // assert
-    expect(result['Authorization']).toEqual(undefined);
+    expect(result.Authorization).toEqual(undefined);
     expect(result['x-rd-api-key']).toEqual(undefined);
     expect(result['x-rd-api-nonce']).toEqual(undefined);
     expect(result['x-rd-timestamp']).toEqual(undefined);
-    expect(result['Content-Type']).toEqual(undefined);
   });
 
-});
+  test('nonce header should account for empty object payload', async () => {
+    const options = new ClientOptions();
+    options.apiKey = 'nJYLab]!';
+    options.apiSecretKey = 'ka4B#%NYx';
+    const clientHelpers = new ClientHelpers(options);
+    const fakeTimestamp = 1748543688878;
+    jest.spyOn(clientHelpers, 'getTimestamp').mockReturnValue(fakeTimestamp);
 
+    const result = await clientHelpers.getHeaders(testUrl, {});
 
-describe('getBaseUrl', () => {
-
-  test('should return correct url in development', () => {
-    // arrange
-    let options = new ClientOptions();
-    options.development = true;
-    let clientHelpers = new ClientHelpers(options);
-
-    // act
-    let result = clientHelpers.getBaseUrl();
-
-    // assert
-    expect(result).toEqual('https://api-dev.rentdynamics.com');
+    expect(result['x-rd-api-nonce']).toEqual('d7369ddf9c7496de4e503073f9aa1962a2dc1158');
   });
 
-  test('should return custom url in development with developmentUrl', () => {
-    // arrange
-    let options = new ClientOptions();
-    options.development = true;
-    options.developmentUrl = 'https://my-new.site.com'
-    let clientHelpers = new ClientHelpers(options);
+  test('nonce header should account for empty array payload', async () => {
+    const options = new ClientOptions();
+    options.apiKey = 'nJYLab]!';
+    options.apiSecretKey = 'ka4B#%NYx';
+    const clientHelpers = new ClientHelpers(options);
+    const fakeTimestamp = 1748543688878;
+    jest.spyOn(clientHelpers, 'getTimestamp').mockReturnValue(fakeTimestamp);
 
-    // act
-    let result = clientHelpers.getBaseUrl();
+    const result = await clientHelpers.getHeaders(testUrl, []);
 
-    // assert
-    expect(result).toEqual(options.developmentUrl);
+    expect(result['x-rd-api-nonce']).toEqual('d7369ddf9c7496de4e503073f9aa1962a2dc1158');
   });
-
-  test('should return production url even when developmentUrl is passed in', () => {
-    // arrange
-    let options = new ClientOptions();
-    options.development = false;
-    options.developmentUrl = 'https://my-new.site.com'
-    let clientHelpers = new ClientHelpers(options);
-
-    // act
-    let result = clientHelpers.getBaseUrl();
-
-    // assert
-    expect(result).toEqual('https://api.rentdynamics.com');
-  });
-
-  test('should return correct url in production', () => {
-    // arrange
-    let options = new ClientOptions();
-    options.development = false;
-    let clientHelpers = new ClientHelpers(options);
-
-    // act
-    let result = clientHelpers.getBaseUrl();
-
-    // assert
-    expect(result).toEqual('https://api.rentdynamics.com');
-  });
-
-  test('should return correct url when passing base url in options in production', () => {
-    // arrange
-    let options = new ClientOptions();
-    options.development = false;
-    options.baseUrl = 'https://api.rentplus.com';
-    let clientHelpers = new ClientHelpers(options);
-
-    // act
-    let result = clientHelpers.getBaseUrl();
-
-    //assert
-    expect(result).toEqual('https://api.rentplus.com');
-  });
-
-});
-
-
-describe('stringifyParameters', () => {
-
-  test('should stringify basic parameters', () => {
-    // arrange
-    let options = new ClientOptions();
-    options.development = true;
-    let clientHelpers = new ClientHelpers(options);
-    let parameters = {
-      filters: {id: 10},
-      include: ['hobby'],
-      exclude: ['age'],
-      fields: ['id', 'name'],
-      orderBy: 'name',
-      page: 1,
-      pageSize: 20,
-      distinct: true
-    };
-
-    // act
-    let result = clientHelpers.stringifyParameters(parameters);
-
-    // assert
-    expect(result).toContain('filters=id=10');
-    expect(result).toContain('include=hobby');
-    expect(result).toContain('exclude=age');
-    expect(result).toContain('fields=id,name');
-    expect(result).toContain('orderBy=name');
-    expect(result).toContain('page=1');
-    expect(result).toContain('pageSize=20');
-    expect(result).toContain('distinct=true');
-  });
-
-  test('should stringify more complex filters', () => {
-    // arrange
-    let options = new ClientOptions();
-    options.development = true;
-    let clientHelpers = new ClientHelpers(options);
-    let parameters = {
-      filters: {
-        id: 10,
-        age: [20, 21, 22, 23, 24],
-        hobby: { id: 10 },
-        nullValue: null,
-        emptyArray: [],
-        emptySubObj: {id: null}
-      }
-    };
-
-    // act
-    let result = clientHelpers.stringifyParameters(parameters);
-
-    // assert
-    expect(result).toContain('id=10');
-    expect(result).toContain('age__in=20,21,22,23,24');
-    expect(result).toContain('hobby__id=10');
-    expect(result).not.toContain('nullValue');
-    expect(result).not.toContain('emptyArray');
-    expect(result).not.toContain('emptySubObj');
-  });
-
 });
