@@ -203,7 +203,9 @@ export class ClientHelpers {
   ) {
     const headers: Record<string, string> = {};
     if (this.options.apiKey && this.options.apiSecretKey) {
-      if (typeof payload !== 'undefined') {
+      if (payload === null) {
+        payload = undefined;
+      } else if (typeof payload !== 'undefined') {
         payload = this.formatPayload(payload);
         payload = JSON.stringify(payload);
         if (['{}', '[]'].includes(payload)) {
