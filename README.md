@@ -91,6 +91,10 @@ not requests are authenticated by calling `login` and `logout`.
 `ClientHelpers` is consumed by `Client`. `ClientHelpers` can be used on it's own to make a custom
 client for more complex use cases.
 
+## Development
+
+For notes on how this project works internally see the [wiki](https://github.com/RentDynamics/rentdynamics-js/wiki).
+
 [npm-version-image]: https://img.shields.io/npm/v/rentdynamics.svg
 [npm-version-link]: https://www.npmjs.com/package/rentdynamics
 [npm-license-image]: https://img.shields.io/npm/l/rentdynamics.svg

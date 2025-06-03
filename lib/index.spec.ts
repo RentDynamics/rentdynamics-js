@@ -57,6 +57,11 @@ describe('get', () => {
     // assert
     expect(spy.mock.calls.length).toBe(1);
     expect(spy.mock.calls[0][0]).toEqual(`https://api.rentdynamics.dev${endpoint}`);
+    expect(
+      Object.entries(spy.mock.calls[0][1]?.headers || []).some(
+        ([k, v]) => k === 'Content-Type' && v === 'application/json'
+      )
+    ).toBe(true);
     expect(response.ok).toBe(v);
   });
 });
@@ -74,6 +79,11 @@ describe('put', () => {
     // assert
     expect(spy.mock.calls.length).toBe(1);
     expect(spy.mock.calls[0][0]).toEqual(`https://api.rentdynamics.dev${endpoint}`);
+    expect(
+      Object.entries(spy.mock.calls[0][1]?.headers || []).some(
+        ([k, v]) => k === 'Content-Type' && v === 'application/json'
+      )
+    ).toBe(true);
     expect(response.ok).toBe(v);
   });
 });
@@ -91,6 +101,11 @@ describe('post', () => {
     // assert
     expect(spy.mock.calls.length).toBe(1);
     expect(spy.mock.calls[0][0]).toEqual(`https://api.rentdynamics.dev${endpoint}`);
+    expect(
+      Object.entries(spy.mock.calls[0][1]?.headers || []).some(
+        ([k, v]) => k === 'Content-Type' && v === 'application/json'
+      )
+    ).toBe(true);
     expect(response.ok).toBe(v);
   });
 });
@@ -107,6 +122,11 @@ describe('delete', () => {
     // assert
     expect(spy.mock.calls.length).toBe(1);
     expect(spy.mock.calls[0][0]).toEqual(`https://api.rentdynamics.dev${endpoint}`);
+    expect(
+      Object.entries(spy.mock.calls[0][1]?.headers || []).some(
+        ([k, v]) => k === 'Content-Type' && v === 'application/json'
+      )
+    ).toBe(true);
     expect(response.ok).toBe(v);
   });
 });
@@ -124,7 +144,7 @@ describe('login', () => {
 
     // assert
     expect(spy.mock.calls.length).toBe(1);
-    expect(client.helpers.authToken).toBeUndefined();
+    expect(client.authToken).toBeUndefined();
     expect(response.ok).toBe(false);
   });
 
@@ -139,7 +159,7 @@ describe('login', () => {
         json: { token: expectedToken }
       })
     );
-    expect(client.helpers.authToken).toBeUndefined();
+    expect(client.authToken).toBeUndefined();
 
     // act
     const response = await client.login(username, password);
@@ -147,7 +167,7 @@ describe('login', () => {
     // assert
     expect(spyPost).toHaveBeenCalledTimes(1);
     expect(response.ok).toBe(true);
-    expect(client.helpers.authToken).toEqual(expectedToken);
+    expect(client.authToken).toEqual(expectedToken);
   });
 
   test('sends username and encrypted password', async () => {
@@ -175,10 +195,10 @@ describe('logout', () => {
   test('on success clears auth token', async () => {
     // arrange
     const options = createRandomOptions();
-    options.authToken = chance.apple_token();
     const rdClient = new Client(options);
+    rdClient.authToken = chance.apple_token();
     const spyPost = jest.spyOn(global, 'fetch').mockReturnValue(createFetchMock());
-    expect(options.authToken).toBeDefined();
+    expect(rdClient.authToken).toBeDefined();
 
     // act
     const response = await rdClient.logout();
@@ -186,17 +206,17 @@ describe('logout', () => {
     // assert
     expect(spyPost).toHaveBeenCalledTimes(1);
     expect(response.ok).toBe(true);
-    expect(options.authToken).toBeUndefined();
+    expect(rdClient.authToken).toBeUndefined();
   });
 
   test('on failure does not clear auth token', async () => {
     // arrange
     const options = createRandomOptions();
     const token = chance.apple_token();
-    options.authToken = token;
     const rdClient = new Client(options);
+    rdClient.authToken = token;
     const spyPost = jest.spyOn(global, 'fetch').mockReturnValue(createFetchMock({ ok: false }));
-    expect(options.authToken).toBeDefined();
+    expect(rdClient.authToken).toBeDefined();
 
     // act
     const response = await rdClient.logout();
@@ -204,15 +224,15 @@ describe('logout', () => {
     // assert
     expect(spyPost).toHaveBeenCalledTimes(1);
     expect(response.ok).toBe(false);
-    expect(options.authToken).toEqual(token);
+    expect(rdClient.authToken).toEqual(token);
   });
 
   test('sends auth token', async () => {
     // arrange
     const options = createRandomOptions();
     const token = chance.apple_token();
-    options.authToken = token;
     const rdClient = new Client(options);
+    rdClient.authToken = token;
     const spyPost = jest.spyOn(global, 'fetch').mockReturnValue(createFetchMock());
 
     // act
@@ -374,6 +394,28 @@ describe('getNonce', () => {
     // assert
     expect(result).toEqual('a724eb47b4fc644b2fe1fd5a0b778fc6cff1930c');
   });
+
+  test('when url contains a pipe', async () => {
+    // arrange
+    const url = '/foo?filters=bar=baz|qux=quux';
+
+    // act
+    const result = await clientHelpers.getNonce(timestamp, url);
+
+    // assert
+    expect(result).toEqual('4fc98a597e31a4b770ebb16ffd03eecd2c791453');
+  });
+
+  test('when url contains a space', async () => {
+    // arrange
+    const url = '/foo?filters=bar baz';
+
+    // act
+    const result = await clientHelpers.getNonce(timestamp, url);
+
+    // assert
+    expect(result).toEqual('99574971be58c966b467beebe6e09e7082a8a8e0');
+  });
 });
 
 describe('encryptPassword', () => {
@@ -390,11 +432,10 @@ describe('getHeaders', () => {
   test('should return authorization header if there is an authToken', async () => {
     // arrange
     const options = createRandomOptions();
-    options.authToken = 'akK9KL2';
     const clientHelpers = new ClientHelpers(options);
 
     // act
-    const result = await clientHelpers.getHeaders(testUrl);
+    const result = await clientHelpers.getHeaders(testUrl, undefined, 'akK9KL2');
 
     // assert
     expect(result.Authorization).toBeDefined();
@@ -403,7 +444,6 @@ describe('getHeaders', () => {
   test(`should not return authorization header if there isn't an authToken`, async () => {
     // arrange
     const options = createRandomOptions();
-    options.authToken = '';
     const clientHelpers = new ClientHelpers(options);
 
     // act
@@ -440,15 +480,6 @@ describe('getHeaders', () => {
     expect(result['x-rd-timestamp']).toBeDefined();
   });
 
-  test('should return Content-Type header', async () => {
-    // arrange / act
-    const result = await createRandomHelpers().getHeaders(testUrl);
-
-    // assert
-    expect(result['Content-Type']).toBeDefined();
-    expect(result['Content-Type']).toEqual('application/json');
-  });
-
   test('should return empty headers if missing apiKey and apiSecretKey', async () => {
     // arrange
     const options = new ClientOptions();
@@ -464,6 +495,31 @@ describe('getHeaders', () => {
     expect(result['x-rd-api-key']).toEqual(undefined);
     expect(result['x-rd-api-nonce']).toEqual(undefined);
     expect(result['x-rd-timestamp']).toEqual(undefined);
-    expect(result['Content-Type']).toEqual(undefined);
+  });
+
+  test('nonce header should account for empty object payload', async () => {
+    const options = new ClientOptions();
+    options.apiKey = 'nJYLab]!';
+    options.apiSecretKey = 'ka4B#%NYx';
+    const clientHelpers = new ClientHelpers(options);
+    const fakeTimestamp = 1748543688878;
+    jest.spyOn(clientHelpers, 'getTimestamp').mockReturnValue(fakeTimestamp);
+
+    const result = await clientHelpers.getHeaders(testUrl, {});
+
+    expect(result['x-rd-api-nonce']).toEqual('d7369ddf9c7496de4e503073f9aa1962a2dc1158');
+  });
+
+  test('nonce header should account for empty array payload', async () => {
+    const options = new ClientOptions();
+    options.apiKey = 'nJYLab]!';
+    options.apiSecretKey = 'ka4B#%NYx';
+    const clientHelpers = new ClientHelpers(options);
+    const fakeTimestamp = 1748543688878;
+    jest.spyOn(clientHelpers, 'getTimestamp').mockReturnValue(fakeTimestamp);
+
+    const result = await clientHelpers.getHeaders(testUrl, []);
+
+    expect(result['x-rd-api-nonce']).toEqual('d7369ddf9c7496de4e503073f9aa1962a2dc1158');
   });
 });
