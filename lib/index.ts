@@ -203,12 +203,11 @@ export class ClientHelpers {
   ) {
     const headers: Record<string, string> = {};
     if (this.options.apiKey && this.options.apiSecretKey) {
+      if (!payload || !Object.keys(payload).length) {
+        payload = undefined;
+      }
       if (typeof payload !== 'undefined') {
-        payload = this.formatPayload(payload);
-        payload = JSON.stringify(payload);
-        if (['{}', '[]'].includes(payload)) {
-          payload = '';
-        }
+        payload = JSON.stringify(this.formatPayload(payload));
       }
       const timestamp = this.getTimestamp();
       const nonce = await this.getNonce(timestamp, endpoint, payload);
